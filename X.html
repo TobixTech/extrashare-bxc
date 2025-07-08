@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet Connector</title>
+    <style>
+        /* CSS Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        h1 {
+            color: #3a3a3a;
+            margin-bottom: 1.5rem;
+        }
+        
+        .wallet-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .wallet-btn:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+        }
+        
+        .wallet-btn:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .wallet-address {
+            margin-top: 1rem;
+            font-family: monospace;
+            word-break: break-all;
+            padding: 0.5rem;
+            background-color: #f3f4f6;
+            border-radius: 6px;
+        }
+        
+        .error {
+            color: #ef4444;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Web3 Wallet Connector</h1>
+        <button id="connectWallet" class="wallet-btn">Connect Wallet</button>
+        <div id="walletInfo" style="display: none;">
+            <p>Connected Wallet:</p>
+            <p id="walletAddress" class="wallet-address"></p>
+            <p>Network: <span id="networkName"></span></p>
+        </div>
+        <p id="errorMessage" class="error"></p>
+    </div>
+
+    <script>
+        // JavaScript for Wallet Connection
+        document.addEventListener('DOMContentLoaded', () => {
+            const connectButton = document.getElementById('connectWallet');
+            const walletInfo = document.getElementById('walletInfo');
+            const walletAddress = document.getElementById('walletAddress');
+            const networkName = document.getElementById('networkName');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Check if Ethereum provider (like MetaMask) is available
+            if (typeof window.ethereum === 'undefined') {
+                connectButton.disabled = true;
+                errorMessage.textContent = 'No Ethereum wallet detected. Please install MetaMask or another Web3 wallet.';
+                return;
+            }
+            
+            // Check if already connected
+            if (localStorage.getItem('walletConnected') === 'true') {
+                checkWalletConnection();
+            }
+            
+            connectButton.addEventListener('click', connectWallet);
+            
+            // Handle account and chain changes
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    // Wallet disconnected
+                    resetWallet();
+                } else {
+                    // Account changed
+                    updateWalletInfo(accounts[0]);
+                }
+            });
+            
+            window.ethereum.on('chainChanged', () => {
+                window.location.reload(); // Reload page on network change
+            });
+            
+            async function connectWallet() {
+                try {
+                    connectButton.disabled = true;
+                    errorMessage.textContent = '';
+                    
+                    // Request account access
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    
+                    if (accounts.length > 0) {
+                        localStorage.setItem('walletConnected', 'true');
+                        updateWalletInfo(accounts[0]);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    errorMessage.textContent = error.message;
+                    connectButton.disabled = false;
+                }
+            }
+            
+            async function checkWalletConnection() {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    
+                    if (accounts.length > 0) {
+                        updateWalletInfo(accounts[0]);
+                    } else {
+                        resetWallet();
+                    }
+                } catch (error) {
+                    console.error(error);
+                    resetWallet();
+                }
+            }
+            
+            function updateWalletInfo(account) {
+                // Display truncated address (first and last 4 characters)
+                const truncatedAddress = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
+                walletAddress.textContent = truncatedAddress;
+                
+                // Get network name
+                const chainId = window.ethereum.chainId;
+                const networkNames = {
+                    '0x1': 'Ethereum Mainnet',
+                    '0x5': 'Goerli Testnet',
+                    '0xaa36a7': 'Sepolia Testnet',
+                    '0x89': 'Polygon Mainnet',
+                    '0x13881': 'Mumbai Testnet',
+                    '0xa86a': 'Avalanche C-Chain'
+                };
+                
+                networkName.textContent = networkNames[chainId] || `Unknown Network (${chainId})`;
+                
+                // Update UI
+                walletInfo.style.display = 'block';
+                connectButton.textContent = 'Connected';
+                connectButton.disabled = true;
+            }
+            
+            function resetWallet() {
+                localStorage.removeItem('walletConnected');
+                walletInfo.style.display = 'none';
+                connectButton.textContent = 'Connect Wallet';
+                connectButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
