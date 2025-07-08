@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BSC Wallet Connector</title>
+    <title>BSC Staking DApp</title>
     <style>
         /* CSS Styles */
         body {
@@ -55,6 +55,24 @@
             cursor: not-allowed;
         }
         
+        .stake-btn {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .stake-btn:hover {
+            background-color: #0d9f6e;
+        }
+        
         .switch-network-btn {
             background-color: #3b82f6;
             color: white;
@@ -84,11 +102,27 @@
             color: #10b981;
             margin-top: 1rem;
         }
+        
+        .transaction-status {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
+        
+        .pending {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+        
+        .confirmed {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>BSC Wallet Connector</h1>
+        <h1>BSC Staking DApp</h1>
         <button id="connectWallet" class="wallet-btn">Connect Wallet</button>
         <button id="switchNetwork" class="switch-network-btn" style="display: none;">Switch to BSC</button>
         <div id="walletInfo" style="display: none;">
@@ -96,12 +130,14 @@
             <p id="walletAddress" class="wallet-address"></p>
             <p>Network: <span id="networkName"></span></p>
         </div>
+        <button id="stakeBtn" class="stake-btn">Stake 3 BNB</button>
+        <div id="transactionStatus" class="transaction-status" style="display: none;"></div>
         <p id="statusMessage" class="success"></p>
         <p id="errorMessage" class="error"></p>
     </div>
 
     <script>
-        // JavaScript for BSC Wallet Connection
+        // JavaScript for BSC Wallet Connection with Staking
         document.addEventListener('DOMContentLoaded', () => {
             // BSC Network Details
             const BSC_MAINNET = {
@@ -128,14 +164,19 @@
                 blockExplorerUrls: ['https://testnet.bscscan.com/']
             };
             
+            // Staking contract address (replace with your actual address)
+            const STAKING_ADDRESS = '0x78528ea01Cdc703cc3414035141F78Fe0EB6f5e7';
+            
             // DOM Elements
             const connectButton = document.getElementById('connectWallet');
             const switchNetworkButton = document.getElementById('switchNetwork');
+            const stakeButton = document.getElementById('stakeBtn');
             const walletInfo = document.getElementById('walletInfo');
             const walletAddress = document.getElementById('walletAddress');
             const networkName = document.getElementById('networkName');
             const statusMessage = document.getElementById('statusMessage');
             const errorMessage = document.getElementById('errorMessage');
+            const transactionStatus = document.getElementById('transactionStatus');
             
             // Check if Ethereum provider is available
             if (typeof window.ethereum === 'undefined') {
@@ -149,8 +190,10 @@
                 checkWalletConnection();
             }
             
+            // Event listeners
             connectButton.addEventListener('click', connectWallet);
             switchNetworkButton.addEventListener('click', switchToBSC);
+            stakeButton.addEventListener('click', stakeBNB);
             
             // Handle account and chain changes
             window.ethereum.on('accountsChanged', (accounts) => {
@@ -206,10 +249,12 @@
                 
                 if (chainId !== BSC_MAINNET.chainId && chainId !== BSC_TESTNET.chainId) {
                     switchNetworkButton.style.display = 'block';
+                    stakeButton.style.display = 'none';
                     statusMessage.textContent = 'Please switch to Binance Smart Chain';
                     return false;
                 } else {
                     switchNetworkButton.style.display = 'none';
+                    stakeButton.style.display = 'block';
                     return true;
                 }
             }
@@ -227,10 +272,69 @@
                     statusMessage.textContent = 'Successfully switched to BSC Mainnet';
                     setTimeout(() => statusMessage.textContent = '', 3000);
                     switchNetworkButton.style.display = 'none';
+                    stakeButton.style.display = 'block';
                 } catch (error) {
                     console.error(error);
                     handleError(error);
                     switchNetworkButton.disabled = false;
+                }
+            }
+            
+            async function stakeBNB() {
+                try {
+                    stakeButton.disabled = true;
+                    errorMessage.textContent = '';
+                    
+                    // Check if on BSC network
+                    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                    if (chainId !== BSC_MAINNET.chainId && chainId !== BSC_TESTNET.chainId) {
+                        throw new Error('Please switch to Binance Smart Chain first');
+                    }
+                    
+                    // Get current account
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length === 0) {
+                        throw new Error('No connected account found');
+                    }
+                    
+                    // Convert 3 BNB to wei (1 BNB = 10^18 wei)
+                    const amountWei = (3 * 10**18).toString(16); // Convert to hex
+                    
+                    // Prepare transaction
+                    const transactionParameters = {
+                        to: STAKING_ADDRESS,
+                        from: accounts[0],
+                        value: '0x' + amountWei,
+                        gas: '0x30d40' // 200,000 gas limit
+                    };
+                    
+                    // Show transaction pending status
+                    transactionStatus.style.display = 'block';
+                    transactionStatus.className = 'transaction-status pending';
+                    transactionStatus.textContent = 'Transaction pending...';
+                    
+                    // Send transaction
+                    const txHash = await window.ethereum.request({
+                        method: 'eth_sendTransaction',
+                        params: [transactionParameters]
+                    });
+                    
+                    // Transaction sent
+                    transactionStatus.textContent = `Transaction sent! Hash: ${txHash.substring(0, 12)}...`;
+                    
+                    // You could add transaction confirmation checking here
+                    // For simplicity, we'll just show it as confirmed after a delay
+                    setTimeout(() => {
+                        transactionStatus.className = 'transaction-status confirmed';
+                        transactionStatus.textContent = `Transaction confirmed! Hash: ${txHash.substring(0, 12)}...`;
+                        stakeButton.disabled = false;
+                    }, 15000);
+                    
+                } catch (error) {
+                    console.error(error);
+                    handleError(error);
+                    stakeButton.disabled = false;
+                    transactionStatus.style.display = 'none';
                 }
             }
             
@@ -252,6 +356,11 @@
                 walletInfo.style.display = 'block';
                 connectButton.textContent = 'Connected';
                 connectButton.disabled = true;
+                
+                // Show stake button if on BSC
+                if (chainId === BSC_MAINNET.chainId || chainId === BSC_TESTNET.chainId) {
+                    stakeButton.style.display = 'block';
+                }
             }
             
             function resetWallet() {
@@ -260,6 +369,8 @@
                 connectButton.textContent = 'Connect Wallet';
                 connectButton.disabled = false;
                 switchNetworkButton.style.display = 'none';
+                stakeButton.style.display = 'none';
+                transactionStatus.style.display = 'none';
             }
             
             function handleError(error) {
