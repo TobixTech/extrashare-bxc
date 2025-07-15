@@ -971,14 +971,1180 @@
 
                     }).catch(err => {
                         console.error('Failed to copy text: ', err);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Earning Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Updated Web3Modal to latest version -->
+    <script src="https://unpkg.com/web3modal@1.9.12/dist/index.js"></script>
+    <script src="https://unpkg.com/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.esm.min.js" type="module"></script>
+    <style>
+        body {
+            background: #f5f7fa; /* Light background for the overall page */
+            color: #333; /* Default text color */
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .card-glass {
+            background: white; /* Changed to white for better contrast with dark text */
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            color: #333; /* Ensure text inside card is dark */
+        }
+        .card-glass h2, .card-glass h3 {
+            color: #1a202c; /* Darker heading color for readability */
+        }
+        /* Flip Card Styles */
+        .flip-card-container {
+            width: 100%;
+            height: 250px; /* Adjust height to accommodate collect button */
+            perspective: 1000px;
+            margin-top: 2rem;
+            display: block; /* Visible by default */
+            pointer-events: none; /* Not clickable initially */
+            opacity: 0.5; /* Faded to show it's inactive */
+            transition: opacity 0.3s ease-in-out;
+        }
+        .flip-card-container.active {
+            pointer-events: auto; /* Clickable */
+            opacity: 1; /* Full opacity */
+        }
+        .flip-card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            cursor: default; /* Not clickable by default */
+        }
+        .flip-card-container.active .flip-card {
+            cursor: pointer; /* Change cursor when container is active */
+        }
+        .flip-card.flipped {
+            transform: rotateY(180deg);
+            cursor: default; /* Not clickable after flip */
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column; /* To stack text and icon */
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            color: white; /* Default text color for flip card sides */
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .flip-card-front {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            z-index: 2;
+        }
+        .flip-card-back {
+            background: linear-gradient(135deg, #F7931A 0%, #F9A13F 100%); /* Orange gradient for reward */
+            transform: rotateY(180deg);
+            display: flex; /* Ensure flex for centering */
+            flex-direction: column; /* Stack content vertically */
+            justify-content: center; /* Center content vertically */
+            align-items: center; /* Center content horizontally */
+        }
+        .flip-card-back.lose {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); /* Red gradient for no reward */
+        }
+        /* BXC Section specific styles */
+        .bxc-locked {
+            opacity: 0.7;
+            pointer-events: none;
+            filter: grayscale(80%); /* Visual cue for locked state */
+        }
+        /* Hidden by default */
+        .hidden {
+            display: none !important;
+        }
+        /* Wallet button styles */
+        .wallet-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .wallet-option:hover {
+            background-color: #f3f4f6;
+        }
+        .wallet-option img {
+            width: 32px;
+            height: 32px;
+            margin-right: 12px;
+        }
+        .wallet-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .wallet-modal-content {
+            background-color: white;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+        }
+        .wallet-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .wallet-modal-close {
+            cursor: pointer;
+            font-size: 24px;
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen">
+    <header class="gradient-bg py-3 px-4 text-white">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/3d39ddec-cda4-4910-86f1-2a93ccde5887.png" alt="BWB Logo" class="h-6">
+                <nav class="hidden md:flex ml-10 space-x-6">
+                    <a href="#" class="text-gray-300 hover:text-white text-sm">Home</a>
+                    <a href="#" class="text-gray-300 hover:text-white text-sm">Activity</a>
+                    <a href="#" class="text-gray-300 hover:text-white text-sm">Rules</a>
+                </nav>
+            </div>
+            <button id="connectWalletBtn" class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-md text-sm font-medium text-black transition">
+                <i class="fas fa-wallet mr-2"></i>Connect Wallet
+            </button>
+        </div>
+    </header>
+
+    <!-- Custom Wallet Selection Modal -->
+    <div id="walletModal" class="wallet-modal hidden">
+        <div class="wallet-modal-content">
+            <div class="wallet-modal-header">
+                <h3 class="text-lg font-bold">Connect Wallet</h3>
+                <span class="wallet-modal-close" id="closeWalletModal">&times;</span>
+            </div>
+            <div class="wallet-options">
+                <div class="wallet-option" data-wallet="metamask">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask">
+                    <span>MetaMask</span>
+                </div>
+                <div class="wallet-option" data-wallet="bitget">
+                    <img src="https://bitget.com/favicon.ico" alt="BitGet Wallet">
+                    <span>BitGet Wallet</span>
+                </div>
+                <div class="wallet-option" data-wallet="okx">
+                    <img src="https://www.okx.com/cdn/assets/imgs/221/C5E0D4FF61D8C716.png" alt="OKX Wallet">
+                    <span>OKX Wallet</span>
+                </div>
+                <div class="wallet-option" data-wallet="trust">
+                    <img src="https://trustwallet.com/assets/images/favicon.png" alt="Trust Wallet">
+                    <span>Trust Wallet</span>
+                </div>
+                <div class="wallet-option" data-wallet="walletconnect">
+                    <img src="https://walletconnect.com/images/walletconnect-logo.svg" alt="WalletConnect">
+                    <span>Other Wallets (WalletConnect)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="container mx-auto py-8 px-4 md:px-6">
+        <section class="my-8 max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="card-glass p-6 flex-1">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">BWB Staking</h2>
+                        <span class="text-blue-500 font-medium">$8 Minimum (One-Time)</span>
+                    </div>
+                    <div class="border-b border-gray-200 pb-4 mb-4">
+                        <div class="bg-blue-50 rounded-lg p-4 mb-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-blue-800 font-medium" id="participantsCount">Participants: 0 / 0</span>
+                                <span class="text-blue-800" id="participantsPercentage">0.00%</span>
+                            </div>
+                            <div class="h-3 bg-blue-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-600" id="progressBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-gray-100 p-3 rounded-md text-center">
+                            <div class="text-gray-500 text-xs">Amount</div>
+                            <div class="font-bold text-blue-600">$8+</div>
+                        </div>
+                        <div class="bg-gray-100 p-3 rounded-md text-center">
+                            <div class="text-gray-500 text-xs">Your Stake</div>
+                            <div class="font-bold text-blue-600" id="yourStakeAmountDisplay">$0.00</div>
+                        </div>
+                        <div class="bg-gray-100 p-3 rounded-md text-center">
+                            <div class="text-gray-500 text-xs">Time Remaining</div>
+                            <div class="font-bold text-blue-600 flex items-center justify-center">
+                                <i class="fas fa-clock text-sm mr-1"></i>
+                                <span id="timer">00:00:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="stakeBtn" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 py-4 rounded-xl font-bold text-white transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-xl">
+                        <i class="fas fa-coins mr-2"></i> Stake Now ($8+)
+                    </button>
+                </div>
+
+                <div class="card-glass p-6 flex-1">
+                    <h3 class="text-lg font-bold mb-4">Referral Bonus</h3>
+                    <div class="flex items-center justify-between bg-gray-100 p-3 rounded-md mb-4">
+                        <div>
+                            <div class="text-sm text-gray-500">Your Code</div>
+                            <div class="font-mono font-bold" id="userReferralCode">N/A</div> </div>
+                        <button class="bg-gray-200 hover:bg-gray-300 p-2 rounded-md text-gray-700 copy-referral-code">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="text-sm text-gray-500 mb-2">Share your referral link:</div>
+                    <div class="flex mb-4">
+                        <input type="text" readonly value="https://xtrashare-bxc.vercel.app?inviteCode=N/A" class="flex-1 bg-gray-100 px-3 py-2 rounded-l-md text-sm text-gray-800" id="referralLinkInput"> <button class="bg-blue-500 hover:bg-blue-600 px-3 py-2 rounded-r-md text-sm text-white copy-referral-link-1">Copy</button>
+                    </div>
+                     <div class="text-sm text-gray-500">
+                        <span class="font-bold" id="referralCount">0</span> friends referred.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-glass p-6 my-8 max-w-6xl mx-auto">
+                <h2 class="text-2xl font-bold mb-4">My Balances</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-100 p-4 rounded-md text-center">
+                        <div class="text-gray-500 text-sm">Your Total Staked Value</div>
+                        <div class="font-bold text-xl text-blue-600" id="totalStakedDisplay">$0.00</div>
+                         <p class="text-xs text-gray-500 mt-1">(Includes initial $8 + collected rewards)</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-md text-center">
+                        <div class="text-gray-500 text-sm">Your BXC Balance</div>
+                        <div class="font-bold text-xl text-yellow-600" id="bxcBalanceDisplay">0 BXC</div>
+                    </div>
+                </div>
+                <button id="withdrawBtn" class="w-full bg-red-500 hover:bg-red-600 py-3 mt-6 rounded-xl font-bold text-white transition-all duration-300 shadow-lg" disabled>
+                    <i class="fas fa-wallet mr-2"></i> Withdraw BXC Funds
+                </button>
+                <p class="text-xs text-gray-500 mt-2 text-center" id="withdrawStatusMessage"></p>
+            </div>
+
+            <div id="rewardFlipCardContainer" class="flip-card-container">
+                <div id="rewardFlipCard" class="flip-card">
+                    <div class="flip-card-front" id="flipCardFrontContent">
+                        <i class="fas fa-info-circle text-5xl mb-3"></i><p>Stake $8 to unlock your reward card.</p>
+                    </div>
+                    <div class="flip-card-back" id="rewardFlipCardBack">
+                        <span id="revealedRewardMessage" class="text-xl mb-4"></span>
+                        <button id="collectRewardBtn" class="bg-green-500 hover:bg-green-600 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 shadow-lg hidden">
+                            <i class="fas fa-arrow-down mr-2"></i> Collect Reward
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-glass p-6 my-8 max-w-6xl mx-auto" id="bxcTokenAccrualSection">
+                <h2 class="text-2xl font-bold mb-4">BXC Earning Status</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-100 p-4 rounded-md text-center">
+                        <div class="text-gray-500 text-sm">Your Current BXC</div>
+                        <div class="font-bold text-xl text-purple-600" id="currentBxcBalanceDisplay">0 BXC</div>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-md text-center">
+                        <div class="text-gray-500 text-sm">BXC Accrual Rate</div>
+                        <div class="font-bold text-xl text-purple-600" id="bxcRateDisplayValue">+ 0.00 BXC/sec</div>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500 mt-4 text-center" id="bxcStatusMessage">Stake to unlock BXC earning and referral bonuses!</p>
+            </div>
+
+        </section>
+
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6">Invite Friends</h2>
+            <div class="card-glass p-6 rounded-xl">
+                <h3 class="text-xl font-semibold mb-4">Your Referral Code</h3>
+                <div class="bg-gray-100 p-4 rounded-lg mb-6 flex items-center justify-between">
+                    <code class="text-lg font-mono" id="inviteSectionReferralCode">N/A</code>
+                    <button class="text-blue-600 hover:text-blue-500 transition copy-referral-code">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                
+                <h4 class="font-medium mb-3">Share Referral Link</h4>
+                <div class="flex">
+                    <input type="text" readonly 
+                        value="https://xtrashare-bxc.vercel.app/en/fomoThursday?inviteCode=N/A" 
+                        class="flex-1 bg-gray-100 px-4 py-2 rounded-l-lg flex-grow text-gray-800"
+                        id="inviteSectionReferralLink">
+                    <button class="bg-blue-600 px-4 py-2 rounded-r-lg text-white copy-referral-link-2">Copy</button>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-bold mb-6">Trading Rewards</h2>
+            <div class="card-glass p-6 rounded-xl">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-gift text-yellow-500 text-2xl mr-4"></i>
+                    <p class="text-gray-600">Complete trades to enter the prize draw for rewards from <span class="font-bold text-blue-600">$10-$899!</span></p>
+                </div>
+                <div class="badge bg-yellow-500/20 text-yellow-600 px-3 py-1 rounded-full inline-block">
+                    9,000 winners will be selected!
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { ethers } from "https://cdn.ethers.io/lib/ethers-5.7.esm.min.js";
+
+        // --- IMPORTANT: CONFIGURE YOUR BACKEND URL HERE ---
+        const BACKEND_URL = "https://bxc-backend-1dkpqw.fly.dev/"; 
+        // --- END CONFIGURATION ---
+
+        // DOM Elements
+        const connectWalletBtn = document.getElementById('connectWalletBtn');
+        const stakeBtn = document.getElementById('stakeBtn');
+        const timerElement = document.getElementById('timer');
+        const participantsCountElement = document.getElementById('participantsCount');
+        const participantsPercentageElement = document.getElementById('participantsPercentage');
+        const progressBar = document.getElementById('progressBar');
+        const yourStakeAmountDisplay = document.getElementById('yourStakeAmountDisplay');
+        const rewardFlipCardContainer = document.getElementById('rewardFlipCardContainer');
+        const rewardFlipCard = document.getElementById('rewardFlipCard');
+        const flipCardFrontContent = document.getElementById('flipCardFrontContent');
+        const rewardFlipCardBack = document.getElementById('rewardFlipCardBack');
+        const revealedRewardMessage = document.getElementById('revealedRewardMessage');
+        const collectRewardBtn = document.getElementById('collectRewardBtn');
+        
+        // My Balances Section
+        const totalStakedDisplay = document.getElementById('totalStakedDisplay'); 
+        const bxcBalanceDisplay = document.getElementById('bxcBalanceDisplay');
+        const withdrawBtn = document.getElementById('withdrawBtn');
+        const withdrawStatusMessage = document.getElementById('withdrawStatusMessage');
+        
+        // Referral Section
+        const userReferralCode = document.getElementById('userReferralCode');
+        const referralLinkInput = document.getElementById('referralLinkInput');
+        const referralCountDisplay = document.getElementById('referralCount');
+        const inviteSectionReferralCode = document.getElementById('inviteSectionReferralCode');
+        const inviteSectionReferralLink = document.getElementById('inviteSectionReferralLink');
+
+        // BXC Token Accrual Elements
+        const bxcTokenAccrualSection = document.getElementById('bxcTokenAccrualSection');
+        const currentBxcBalanceDisplay = document.getElementById('currentBxcBalanceDisplay');
+        const bxcRateDisplayValue = document.getElementById('bxcRateDisplayValue');
+        const bxcStatusMessage = document.getElementById('bxcStatusMessage');
+
+        // Custom Wallet Modal Elements
+        const walletModal = document.getElementById('walletModal');
+        const closeWalletModal = document.getElementById('closeWalletModal');
+        const walletOptions = document.querySelectorAll('.wallet-option');
+
+        // --- Client-side Constants ---
+        const INITIAL_STAKE_AMOUNT = 8; 
+        const dailyBXCIncrease = 2400; 
+        const bxcIncreasePerSecond = dailyBXCIncrease / (24 * 3600); 
+        let countdownIntervalId = null;
+        let bxcAccrualIntervalId = null;
+        let currentBxcSimulated = 0;
+
+        // --- Web3 Integration (Using Web3Modal) ---
+        let web3Modal;
+        let connection;
+        let web3Provider; 
+        let signer;      
+        let currentWalletAddress = null; 
+        let selectedWalletType = null;
+
+        // TARGET BNB SMART CHAIN MAINNET (CHAIN_ID 56)
+        const TARGET_CHAIN_ID = 56; 
+        const TARGET_CHAIN_NAME = "BNB Smart Chain Mainnet";
+        // *** IMPORTANT: YOUR INFURA PROJECT ID FOR BSC ***
+        const INFURA_PROJECT_ID = "3d3ff7875aac47eea9d9c3f5b5c86cc1"; 
+        const TARGET_CHAIN_RPC = `https://bsc-mainnet.infura.io/v3/${INFURA_PROJECT_ID}`; // Construct Infura URL
+        const BSC_EXPLORER_URL = "https://bscscan.com"; // For linking to transactions
+
+        // Recipient address for the 8$ stake
+        const STAKE_RECIPIENT_ADDRESS = "0x78528ea01Cdc703cc3414035141F78Fe0EB6f5e7"; 
+
+        // BSC Chain Configuration for adding to wallets
+        const BSC_CHAIN_CONFIG = {
+            chainId: ethers.utils.hexlify(TARGET_CHAIN_ID),
+            chainName: TARGET_CHAIN_NAME,
+            nativeCurrency: {
+                name: 'BNB',
+                symbol: 'BNB',
+                decimals: 18
+            },
+            rpcUrls: [TARGET_CHAIN_RPC],
+            blockExplorerUrls: [BSC_EXPLORER_URL]
+        };
+
+        // Provider options for Web3Modal
+        const providerOptions = {
+            walletconnect: {
+                package: window.WalletConnectWeb3Provider.default,
+                options: {
+                    infuraId: INFURA_PROJECT_ID,
+                    rpc: {
+                        [TARGET_CHAIN_ID]: TARGET_CHAIN_RPC,
+                    },
+                    chainId: TARGET_CHAIN_ID,
+                    network: "binance",
+                }
+            },
+            // We'll handle other wallets through our custom UI
+        };
+
+        // Initialize Web3Modal
+        function initWeb3Modal() {
+            web3Modal = new Web3Modal.default({
+                cacheProvider: false, // Changed to false to use our custom UI first
+                providerOptions,
+                disableInjectedProvider: true, // Disable auto-detection of injected providers
+            });
+
+            // Check if we have a cached provider
+            if (web3Modal.cachedProvider) {
+                console.log("Found cached provider:", web3Modal.cachedProvider);
+            }
+        }
+
+        // Custom wallet connection handler
+        async function handleWalletSelection(walletType) {
+            try {
+                selectedWalletType = walletType;
+                hideWalletModal();
+                
+                let provider;
+                
+                switch(walletType) {
+                    case 'metamask':
+                        // Check if MetaMask is installed
+                        if (window.ethereum && window.ethereum.isMetaMask) {
+                            provider = window.ethereum;
+                        } else {
+                            window.open('https://metamask.io/download/', '_blank');
+                            throw new Error("MetaMask is not installed. Please install it to continue.");
+                        }
+                        break;
+                        
+                    case 'bitget':
+                        // Check if BitGet wallet is installed
+                        if (window.bitkeep && window.bitkeep.ethereum) {
+                            provider = window.bitkeep.ethereum;
+                        } else if (window.bitget) {
+                            provider = window.bitget;
+                        } else {
+                            window.open('https://web3.bitget.com/en/wallet-download', '_blank');
+                            throw new Error("BitGet Wallet is not installed. Please install it to continue.");
+                        }
+                        break;
+                        
+                    case 'okx':
+                        // Check if OKX wallet is installed
+                        if (window.okxwallet) {
+                            provider = window.okxwallet;
+                        } else {
+                            window.open('https://www.okx.com/web3', '_blank');
+                            throw new Error("OKX Wallet is not installed. Please install it to continue.");
+                        }
+                        break;
+                        
+                    case 'trust':
+                        // Check if Trust wallet is installed
+                        if (window.ethereum && window.ethereum.isTrust) {
+                            provider = window.ethereum;
+                        } else if (window.trustwallet) {
+                            provider = window.trustwallet;
+                        } else {
+                            window.open('https://trustwallet.com/download', '_blank');
+                            throw new Error("Trust Wallet is not installed. Please install it to continue.");
+                        }
+                        break;
+                        
+                    case 'walletconnect':
+                        // Use Web3Modal for WalletConnect
+                        connection = await web3Modal.connect();
+                        provider = connection;
+                        break;
+                        
+                    default:
+                        throw new Error("Unknown wallet type selected");
+                }
+                
+                // If we're not using WalletConnect, create our own connection
+                if (walletType !== 'walletconnect') {
+                    // Request accounts
+                    const accounts = await provider.request({ method: 'eth_requestAccounts' });
+                    if (!accounts || accounts.length === 0) {
+                        throw new Error("No accounts returned from wallet");
+                    }
+                    
+                    // Create ethers provider
+                    web3Provider = new ethers.providers.Web3Provider(provider);
+                    connection = provider;
+                } else {
+                    // For WalletConnect, web3Provider is created from the connection
+                    web3Provider = new ethers.providers.Web3Provider(connection);
+                }
+                
+                signer = web3Provider.getSigner();
+                currentWalletAddress = (await signer.getAddress()).toLowerCase();
+                
+                // Check and switch chain if needed
+                await checkAndSwitchChain();
+                
+                // Setup event listeners
+                setupWalletEventListeners();
+                
+                // Update UI
+                connectWalletBtn.textContent = `Connected: ${currentWalletAddress.substring(0, 6)}...${currentWalletAddress.substring(currentWalletAddress.length - 4)}`;
+                
+                // Fetch initial data
+                await fetchInitialData();
+                
+            } catch (error) {
+                console.error("Error connecting wallet:", error);
+                alert(`Failed to connect wallet: ${error.message}`);
+                disconnectWallet();
+            }
+        }
+
+        // Check and switch chain if needed
+        async function checkAndSwitchChain() {
+            const { chainId } = await web3Provider.getNetwork();
+            
+            if (chainId !== TARGET_CHAIN_ID) {
+                console.log(`Current chain ID: ${chainId}, target chain ID: ${TARGET_CHAIN_ID}`);
+                
+                try {
+                    // Try to switch to the BSC network
+                    await connection.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: ethers.utils.hexlify(TARGET_CHAIN_ID) }],
+                    });
+                    console.log("Successfully switched to BSC network");
+                } catch (switchError) {
+                    // This error code indicates that the chain has not been added to the wallet
+                    if (switchError.code === 4902 || switchError.message.includes("Unrecognized chain ID")) {
+                        try {
+                            // Add the BSC network to the wallet
+                            await connection.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [BSC_CHAIN_CONFIG],
+                            });
+                            console.log("Successfully added BSC network");
+                        } catch (addError) {
+                            console.error("Failed to add BSC network:", addError);
+                            alert("Failed to add BSC network to your wallet. Please add it manually.");
+                            throw addError;
+                        }
+                    } else {
+                        console.error("Failed to switch to BSC network:", switchError);
+                        alert("Failed to switch to BSC network. Please switch manually in your wallet.");
+                        throw switchError;
+                    }
+                }
+                
+                // Verify the chain switch was successful
+                const updatedNetwork = await web3Provider.getNetwork();
+                if (updatedNetwork.chainId !== TARGET_CHAIN_ID) {
+                    throw new Error(`Failed to switch to ${TARGET_CHAIN_NAME}. Please switch manually.`);
+                }
+            }
+        }
+
+        // Setup wallet event listeners
+        function setupWalletEventListeners() {
+            if (!connection) return;
+            
+            // Handle account changes
+            if (connection.on) {
+                connection.on("accountsChanged", (accounts) => {
+                    console.log("Accounts changed:", accounts);
+                    if (accounts.length > 0) {
+                        currentWalletAddress = accounts[0].toLowerCase();
+                        connectWalletBtn.textContent = `Connected: ${currentWalletAddress.substring(0, 6)}...${currentWalletAddress.substring(currentWalletAddress.length - 4)}`;
+                        fetchInitialData();
+                    } else {
+                        disconnectWallet();
+                    }
+                });
+                
+                // Handle chain changes
+                connection.on("chainChanged", async (chainIdHex) => {
+                    console.log("Chain changed to:", chainIdHex);
+                    const chainId = parseInt(chainIdHex, 16);
+                    
+                    if (chainId !== TARGET_CHAIN_ID) {
+                        alert(`Wallet is on an unsupported network (Chain ID: ${chainId}). Please switch to ${TARGET_CHAIN_NAME}.`);
+                        try {
+                            await checkAndSwitchChain();
+                        } catch (error) {
+                            console.error("Failed to switch chain:", error);
+                            disconnectWallet();
+                            return;
+                        }
+                    }
+                    
+                    // Refresh provider and signer after chain change
+                    web3Provider = new ethers.providers.Web3Provider(connection);
+                    signer = web3Provider.getSigner();
+                    
+                    // Refresh data
+                    fetchInitialData();
+                });
+                
+                // Handle disconnect
+                connection.on("disconnect", (code, reason) => {
+                    console.log("Provider disconnected:", code, reason);
+                    disconnectWallet();
+                });
+            }
+        }
+
+        // Show wallet selection modal
+        function showWalletModal() {
+            walletModal.classList.remove('hidden');
+        }
+
+        // Hide wallet selection modal
+        function hideWalletModal() {
+            walletModal.classList.add('hidden');
+        }
+
+        // Disconnect wallet
+        async function disconnectWallet() {
+            if (web3Provider && web3Provider.provider && web3Provider.provider.disconnect) {
+                try {
+                    await web3Provider.provider.disconnect();
+                } catch (error) {
+                    console.error("Error disconnecting provider:", error);
+                }
+            }
+            
+            if (web3Modal) {
+                await web3Modal.clearCachedProvider();
+            }
+            
+            currentWalletAddress = null;
+            selectedWalletType = null;
+            connection = null;
+            web3Provider = null;
+            signer = null;
+            
+            connectWalletBtn.textContent = 'Connect Wallet';
+            connectWalletBtn.disabled = false;
+            
+            disableUIForDisconnectedWallet();
+        }
+
+        // Disable UI when wallet is disconnected
+        function disableUIForDisconnectedWallet() {
+            yourStakeAmountDisplay.textContent = `$0.00`;
+            totalStakedDisplay.textContent = `$0.00`;
+            bxcBalanceDisplay.textContent = `0 BXC`;
+            currentBxcBalanceDisplay.textContent = `0 BXC`;
+            userReferralCode.textContent = 'N/A';
+            referralLinkInput.value = `${window.location.origin}?inviteCode=N/A`; 
+            referralCountDisplay.textContent = '0';
+            inviteSectionReferralCode.textContent = 'N/A';
+            inviteSectionReferralLink.value = `${window.location.origin}/en/fomoThursday?inviteCode=N/A`;
+            bxcTokenAccrualSection.classList.add('bxc-locked');
+            bxcStatusMessage.textContent = `Stake to unlock BXC earning and referral bonuses!`;
+            bxcRateDisplayValue.textContent = `+ 0.00 BXC/sec`;
+            
+            if (bxcAccrualIntervalId) {
+                clearInterval(bxcAccrualIntervalId);
+                bxcAccrualIntervalId = null;
+            }
+            
+            rewardFlipCardContainer.classList.remove('active');
+            rewardFlipCard.classList.remove('flipped');
+            collectRewardBtn.classList.add('hidden');
+            rewardFlipCardBack.classList.remove('lose');
+            flipCardFrontContent.innerHTML = `<i class="fas fa-info-circle text-5xl mb-3"></i><p>Stake $8 to unlock your reward card.</p>`;
+            timerElement.textContent = "00:00:00";
+            stakeBtn.disabled = true; 
+            stakeBtn.textContent = 'Connect Wallet to Stake';
+            withdrawBtn.disabled = true;
+            withdrawStatusMessage.textContent = "Connect wallet to see status.";
+        }
+
+        // Get referrer code from URL
+        function getReferrerFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('inviteCode'); 
+        }
+        let referrerCode = getReferrerFromUrl();
+
+        // Update participants display
+        function updateParticipantsDisplay(current, total) {
+            const percentage = total > 0 ? ((current / total) * 100).toFixed(2) : 0;
+            participantsCountElement.textContent = `Participants: ${current} / ${total}`;
+            participantsPercentageElement.textContent = `${percentage}%`;
+            progressBar.style.width = `${percentage}%`;
+        }
+
+        // Format time
+        function formatTime(seconds) {
+            const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        // Fetch initial data
+        async function fetchInitialData() {
+            if (!currentWalletAddress) {
+                disableUIForDisconnectedWallet();
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ walletAddress: currentWalletAddress })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    const globalStatus = data.global;
+                    const user = data.user;
+
+                    updateParticipantsDisplay(globalStatus.totalSlotsUsed, globalStatus.MAX_STAKE_SLOTS);
+                    
+                    yourStakeAmountDisplay.textContent = `$${user.stakedUSDValue.toFixed(2)}`; 
+                    totalStakedDisplay.textContent = `$${user.stakedUSDValue.toFixed(2)}`; 
+                    bxcBalanceDisplay.textContent = `${user.BXC_Balance.toFixed(0)} BXC`;
+                    currentBxcBalanceDisplay.textContent = `${user.BXC_Balance.toFixed(0)} BXC`;
+                    currentBxcSimulated = user.BXC_Balance; 
+
+                    userReferralCode.textContent = user.referralCode;
+                    referralLinkInput.value = `${window.location.origin}?inviteCode=${user.referralCode}`; 
+                    referralCountDisplay.textContent = user.referralCount;
+                    inviteSectionReferralCode.textContent = user.referralCode;
+                    inviteSectionReferralLink.value = `${window.location.origin}/en/fomoThursday?inviteCode=${user.referralCode}`;
+
+                    if (user.slotsStaked > 0) {
+                        bxcTokenAccrualSection.classList.remove('bxc-locked');
+                        bxcStatusMessage.textContent = `BXC earning active!`;
+                        bxcRateDisplayValue.textContent = `+ ${bxcIncreasePerSecond.toFixed(4)} BXC/sec`;
+                        if (bxcAccrualIntervalId === null) {
+                            bxcAccrualIntervalId = setInterval(() => {
+                                currentBxcSimulated += bxcIncreasePerSecond;
+                                currentBxcBalanceDisplay.textContent = `${Math.floor(currentBxcSimulated)} BXC`;
+                            }, 1000);
+                        }
+                    } else {
+                        bxcTokenAccrualSection.classList.add('bxc-locked');
+                        bxcStatusMessage.textContent = `Stake to unlock BXC earning and referral bonuses!`;
+                        bxcRateDisplayValue.textContent = `+ 0.00 BXC/sec`;
+                        if (bxcAccrualIntervalId) clearInterval(bxcAccrualIntervalId);
+                        bxcAccrualIntervalId = null;
+                    }
+
+                    const eventEndTime = new Date(globalStatus.eventEndTime).getTime();
+                    const serverCurrentTime = new Date(globalStatus.serverTime).getTime();
+                    const timeLeftForEvent = Math.max(0, Math.floor((eventEndTime - serverCurrentTime) / 1000));
+
+                    const userStaked = user.slotsStaked > 0;
+                    const eventActive = serverCurrentTime >= new Date(globalStatus.eventStartTime).getTime() && serverCurrentTime < eventEndTime;
+                    const hasRevealedThisEvent = user.claimedEventRewardTime && new Date(user.claimedEventRewardTime).getTime() >= new Date(globalStatus.eventStartTime).getTime();
+                    const hasCollectedThisEvent = user.collectedEventRewardTime && new Date(user.collectedEventRewardTime).getTime() >= new Date(globalStatus.eventStartTime).getTime();
+
+                    if (userStaked && eventActive && !hasCollectedThisEvent && timeLeftForEvent <= 0) {
+                        rewardFlipCardContainer.classList.add('active'); 
+                        if (!hasRevealedThisEvent) {
+                            flipCardFrontContent.innerHTML = `<i class="fas fa-hand-pointer text-5xl mb-3"></i><p>Click to Reveal Your Reward!</p>`;
+                            rewardFlipCard.classList.remove('flipped');
+                            collectRewardBtn.classList.add('hidden'); 
+                        } else {
+                            rewardFlipCard.classList.add('flipped');
+                            revealedRewardMessage.textContent = `You revealed $${user.lastRevealedUSDAmount || 0}!`; 
+                            if (user.lastRevealedUSDAmount === 0) {
+                                rewardFlipCardBack.classList.add('lose');
+                            } else {
+                                rewardFlipCardBack.classList.remove('lose');
+                            }
+                            collectRewardBtn.classList.remove('hidden'); 
+                        }
+                        timerElement.textContent = "Time's up!";
+                        stakeBtn.disabled = true;
+                        stakeBtn.textContent = "One-Time Stake Completed";
+
+                    } else if (userStaked && eventActive && !hasCollectedThisEvent && timeLeftForEvent > 0) {
+                        rewardFlipCardContainer.style.display = 'block'; 
+                        rewardFlipCardContainer.classList.remove('active');
+                        rewardFlipCard.classList.remove('flipped');
+                        collectRewardBtn.classList.add('hidden'); 
+                        flipCardFrontContent.innerHTML = `<i class="fas fa-hourglass-half text-5xl mb-3"></i><p>Reward pending... Event ends in ${formatTime(timeLeftForEvent)}.</p>`;
+                        startCountdown(timeLeftForEvent); 
+                        stakeBtn.disabled = true;
+                        stakeBtn.textContent = "One-Time Stake Completed";
+                    }
+                    else if (userStaked && hasCollectedThisEvent) {
+                        rewardFlipCardContainer.classList.remove('active');
+                        rewardFlipCard.classList.add('flipped'); 
+                        revealedRewardMessage.textContent = `You collected $${user.lastRevealedUSDAmount || 0} for this event!`; 
+                         if (user.lastRevealedUSDAmount === 0) {
+                            rewardFlipCardBack.classList.add('lose');
+                        } else {
+                            rewardFlipCardBack.classList.remove('lose');
+                        }
+                        collectRewardBtn.classList.add('hidden'); 
+                        timerElement.textContent = "Event Ended / Reward Collected";
+                        stakeBtn.disabled = true;
+                        stakeBtn.textContent = "One-Time Stake Completed";
+
+                    } else {
+                        rewardFlipCardContainer.classList.remove('active');
+                        rewardFlipCard.classList.remove('flipped');
+                        collectRewardBtn.classList.add('hidden'); 
+                        rewardFlipCardBack.classList.remove('lose'); 
+                        flipCardFrontContent.innerHTML = `<i class="fas fa-info-circle text-5xl mb-3"></i><p>Stake $8 to unlock your reward card.</p>`;
+                        
+                        startCountdown(timeLeftForEvent); 
+
+                        stakeBtn.disabled = user.slotsStaked > 0 || globalStatus.totalSlotsUsed >= globalStatus.MAX_STAKE_SLOTS;
+                        if (user.slotsStaked > 0) {
+                            stakeBtn.textContent = "One-Time Stake Completed";
+                        } else if (globalStatus.totalSlotsUsed >= globalStatus.MAX_STAKE_SLOTS) {
+                            stakeBtn.textContent = "Slots Full";
+                        } else {
+                            stakeBtn.textContent = 'Stake Now ($8+)';
+                        }
+                    }
+
+                    withdrawBtn.disabled = user.BXC_Balance <= 0;
+                    withdrawStatusMessage.textContent = user.BXC_Balance <= 0 ? "No BXC to withdraw." : "";
+
+                } else {
+                    console.error('Failed to fetch initial data:', data.message || 'Unknown error');
+                    alert('Failed to load dashboard data. Please refresh.');
+                    updateParticipantsDisplay(0, globalStatus ? globalStatus.MAX_STAKE_SLOTS : 30000);
+                    timerElement.textContent = "00:00:00";
+                    withdrawStatusMessage.textContent = "Failed to load withdrawal status.";
+                    stakeBtn.disabled = true; 
+                    stakeBtn.textContent = 'Error Loading Data';
+                }
+            } catch (error) {
+                console.error('Network error fetching initial data:', error);
+                alert('Could not connect to server. Please try again later.');
+                updateParticipantsDisplay(0, 30000);
+                timerElement.textContent = "00:00:00";
+                withdrawStatusMessage.textContent = "Network error. Cannot withdraw.";
+                stakeBtn.disabled = true; 
+                stakeBtn.textContent = 'Network Error';
+            }
+        }
+
+        // Staking Logic
+        stakeBtn.addEventListener('click', async function() {
+            if (!currentWalletAddress) {
+                alert("Please connect your wallet first!");
+                return;
+            }
+            if (!signer) { 
+                alert("Wallet not fully connected or signer not available. Please try reconnecting.");
+                return;
+            }
+
+            stakeBtn.textContent = 'Initiating Transaction...';
+            stakeBtn.disabled = true;
+            
+            try {
+                // Determine the amount of BNB to send for the $8 stake
+                const amountInBNB = ethers.utils.parseEther("0.015"); // Roughly $8-10 USD, adjust as needed.
+
+                // Send BNB transaction to the specified recipient address
+                const tx = await signer.sendTransaction({
+                    to: STAKE_RECIPIENT_ADDRESS,
+                    value: amountInBNB 
+                });
+
+                stakeBtn.textContent = 'Waiting for Confirmation...';
+                console.log("Transaction sent:", tx.hash);
+
+                await tx.wait(); // Wait for the transaction to be mined and confirmed
+                console.log("Transaction confirmed!");
+                alert(`BNB stake transaction confirmed! View on BSCScan: ${BSC_EXPLORER_URL}/tx/${tx.hash}`);
+
+                // Now, call your backend to record the stake (after on-chain confirmation)
+                const response = await fetch(`${BACKEND_URL}/api/stake`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        walletAddress: currentWalletAddress,
+                        referrerRef: referrerCode,
+                        transactionHash: tx.hash 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message);
+                    fetchInitialData(); 
+                } else {
+                    alert(`Error: ${data.message}. The on-chain transaction was successful, but there was an issue recording it on the backend. Please contact support with transaction hash: ${tx.hash}`);
+                    console.error("Backend failed to record stake after on-chain TX:", data.message);
+                }
+            } catch (error) {
+                console.error('Error during staking transaction or backend call:', error);
+                if (error.code === 4001) { 
+                    alert('Transaction rejected by user.');
+                } else {
+                    alert(`An error occurred during staking: ${error.message}. Please ensure you have enough BNB for gas fees.`);
+                }
+            } finally {
+                // Re-enable/update button state will be handled by fetchInitialData() on success.
+                // On error, manually reset.
+                if (!response || !response.ok) { 
+                    stakeBtn.textContent = 'Stake Now ($8+)';
+                    stakeBtn.disabled = false;
+                }
+            }
+        });
+
+        // Countdown Timer Function 
+        function startCountdown(initialTimeLeft) {
+            if (countdownIntervalId) clearInterval(countdownIntervalId); 
+
+            let timeLeft = Math.max(0, Math.floor(initialTimeLeft)); 
+
+            countdownIntervalId = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(countdownIntervalId);
+                    timerElement.textContent = "Time's up!";
+                    fetchInitialData(); 
+                    return;
+                }
+
+                const timeString = formatTime(timeLeft);
+                timerElement.textContent = timeString;
+
+                timeLeft--;
+            }, 1000);
+        }
+
+        // Withdraw Logic
+        withdrawBtn.addEventListener('click', async function() {
+            if (withdrawBtn.disabled) return;
+            if (!currentWalletAddress) { alert("Please connect your wallet!"); return; }
+
+            const currentBxc = parseFloat(bxcBalanceDisplay.textContent);
+            if (currentBxc <= 0) {
+                alert("You have no BXC balance to withdraw.");
+                return;
+            }
+
+            const confirmWithdraw = confirm(`Are you sure you want to withdraw your entire ${currentBxc.toFixed(0)} BXC balance? (Note: This is simulated as BXC is not a real token contract. If it were, a blockchain transaction would occur here.)`);
+            if (!confirmWithdraw) {
+                return;
+            }
+
+            withdrawBtn.textContent = 'Processing...';
+            withdrawBtn.disabled = true;
+            withdrawStatusMessage.textContent = "Processing withdrawal...";
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ walletAddress: currentWalletAddress }) 
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message);
+                    fetchInitialData(); 
+                } else {
+                    alert(`Error: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Fetch error during withdrawal:', error);
+                alert('An error occurred during withdrawal. Ensure you have enough gas fees if a real token transfer was involved.');
+            } finally {
+                if (!response || !response.ok) {
+                     withdrawBtn.textContent = 'Withdraw BXC Funds';
+                     withdrawBtn.disabled = false;
+                     withdrawStatusMessage.textContent = "Withdrawal failed.";
+                }
+            }
+        });
+
+        // Flip Card Click Event Listener
+        rewardFlipCard.addEventListener('click', async function() {
+            if (!currentWalletAddress) { alert("Please connect your wallet!"); return; }
+
+            if (!rewardFlipCardContainer.classList.contains('active') || rewardFlipCard.classList.contains('flipped')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/reveal-reward`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ walletAddress: currentWalletAddress })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    revealedRewardMessage.textContent = data.message;
+                    if (data.isLose) {
+                        rewardFlipCardBack.classList.add('lose');
+                    } else {
+                        rewardFlipCardBack.classList.remove('lose');
+                    }
+                    rewardFlipCard.classList.add('flipped');
+                    rewardFlipCard.style.cursor = 'default';
+
+                    fetchInitialData(); 
+
+                } else {
+                    alert(`Error: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Fetch error revealing reward:', error);
+                alert('An error occurred revealing the reward.');
+            }
+        });
+
+        // Collect Reward Button Event Listener
+        collectRewardBtn.addEventListener('click', async function() {
+            if (collectRewardBtn.classList.contains('hidden') || !currentWalletAddress) {
+                return;
+            }
+
+            collectRewardBtn.textContent = 'Collecting...';
+            collectRewardBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/collect-reward`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ walletAddress: currentWalletAddress })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message);
+                    fetchInitialData(); 
+                } else {
+                    alert(`Error: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Fetch error collecting reward:', error);
+                alert('An error occurred collecting the reward.');
+            } finally {
+                collectRewardBtn.textContent = 'Collect Reward';
+                collectRewardBtn.disabled = false;
+            }
+        });
+
+        // Copy referral code/link functionality
+        document.querySelectorAll('.copy-referral-code, .copy-referral-link-1, .copy-referral-link-2').forEach(button => {
+            button.addEventListener('click', async function() {
+                let textToCopy = '';
+                if (this.classList.contains('copy-referral-code')) {
+                    const codeElement = this.closest('.flex').querySelector('code');
+                    textToCopy = codeElement ? codeElement.textContent.trim() : '';
+                } else {
+                    textToCopy = this.previousElementSibling.value;
+                }
+
+                if (textToCopy) {
+                    navigator.clipboard.writeText(textToCopy).then(async () => {
+                        alert('Referral link/code copied!');
+
+                        if (!currentWalletAddress) {
+                            alert("Please connect your wallet first to earn referral bonuses!");
+                            return;
+                        }
+
+                        try {
+                            const response = await fetch(`${BACKEND_URL}/api/referral-copied`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ walletAddress: currentWalletAddress })
+                            });
+                            const data = await response.json();
+
+                            if (response.ok) {
+                                alert(`BXC Bonus: ${data.message}`);
+                                fetchInitialData(); 
+                            } else {
+                                alert(`BXC Bonus Error: ${data.message}`);
+                            }
+                        } catch (error) {
+                            console.error('Fetch error for referral BXC:', error);
+                            alert('An error occurred with the referral bonus. Please try again.');
+                        }
+
+                    }).catch(err => {
+                        console.error('Failed to copy text: ', err);
                         alert('Failed to copy text.');
                     });
                 }
             });
         });
 
-        // Initialize Web3Modal on page load
-        initWeb3Modal(); 
+        // Connect wallet button click event
+        connectWalletBtn.addEventListener('click', function() {
+            if (currentWalletAddress) {
+                // If already connected, disconnect
+                disconnectWallet();
+            } else {
+                // Show wallet selection modal
+                showWalletModal();
+            }
+        });
+
+        // Close wallet modal button click event
+        closeWalletModal.addEventListener('click', hideWalletModal);
+
+        // Wallet option click events
+        walletOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const walletType = this.getAttribute('data-wallet');
+                handleWalletSelection(walletType);
+            });
+        });
+
+        // Initialize Web3Modal
+        initWeb3Modal();
     </script>
 </body>
 </html>
