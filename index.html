@@ -7,7 +7,6 @@
     <title>Crypto Earning Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.esm.min.js" type="module"></script>
     <style>
         body {
             background: #f5f7fa; /* Light background for the overall page */
@@ -343,9 +342,7 @@
         </section>
     </main>
 
-    <script type="module">
-        import { ethers } from "https://cdn.ethers.io/lib/ethers-5.7.esm.min.js";
-
+    <script>
         // --- IMPORTANT: CONFIGURE YOUR BACKEND URL HERE ---
         const BACKEND_URL = "https://bxc-backend-1dkpqw.fly.dev/"; 
         // --- END CONFIGURATION ---
@@ -410,12 +407,9 @@
         const TARGET_CHAIN_RPC = "https://bsc-dataseed.binance.org/"; 
         const BSC_EXPLORER_URL = "https://bscscan.com"; 
 
-        // Recipient address for the 8$ stake
-        const STAKE_RECIPIENT_ADDRESS = "0x78528ea01Cdc703cc3414035141F78Fe0EB6f5e7"; 
-
         // BSC Chain Configuration for adding to wallets
         const BSC_CHAIN_CONFIG = {
-            chainId: ethers.utils.hexlify(TARGET_CHAIN_ID),
+            chainId: '0x' + TARGET_CHAIN_ID.toString(16), // Convert to hex string
             chainName: TARGET_CHAIN_NAME,
             nativeCurrency: {
                 name: 'BNB',
@@ -489,12 +483,11 @@
                     throw new Error("No accounts returned from wallet");
                 }
                 
-                // Create ethers provider
-                web3Provider = new ethers.providers.Web3Provider(provider);
+                // Create provider
                 connection = provider;
                 
-                signer = web3Provider.getSigner();
-                currentWalletAddress = (await signer.getAddress()).toLowerCase();
+                // Get the selected account
+                currentWalletAddress = accounts[0].toLowerCase();
                 
                 // Check and switch chain if needed
                 await checkAndSwitchChain();
@@ -517,45 +510,55 @@
 
         // Check and switch chain if needed
         async function checkAndSwitchChain() {
-            const { chainId } = await web3Provider.getNetwork();
+            if (!connection) return;
             
-            if (chainId !== TARGET_CHAIN_ID) {
-                console.log(`Current chain ID: ${chainId}, target chain ID: ${TARGET_CHAIN_ID}`);
+            try {
+                // Get current chain ID
+                const chainIdHex = await connection.request({ method: 'eth_chainId' });
+                const chainId = parseInt(chainIdHex, 16);
                 
-                try {
-                    // Try to switch to the BSC network
-                    await connection.request({
-                        method: 'wallet_switchEthereumChain',
-                        params: [{ chainId: ethers.utils.hexlify(TARGET_CHAIN_ID) }],
-                    });
-                    console.log("Successfully switched to BSC network");
-                } catch (switchError) {
-                    // This error code indicates that the chain has not been added to the wallet
-                    if (switchError.code === 4902 || switchError.message.includes("Unrecognized chain ID")) {
-                        try {
-                            // Add the BSC network to the wallet
-                            await connection.request({
-                                method: 'wallet_addEthereumChain',
-                                params: [BSC_CHAIN_CONFIG],
-                            });
-                            console.log("Successfully added BSC network");
-                        } catch (addError) {
-                            console.error("Failed to add BSC network:", addError);
-                            alert("Failed to add BSC network to your wallet. Please add it manually.");
-                            throw addError;
+                if (chainId !== TARGET_CHAIN_ID) {
+                    console.log(`Current chain ID: ${chainId}, target chain ID: ${TARGET_CHAIN_ID}`);
+                    
+                    try {
+                        // Try to switch to the BSC network
+                        await connection.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: BSC_CHAIN_CONFIG.chainId }],
+                        });
+                        console.log("Successfully switched to BSC network");
+                    } catch (switchError) {
+                        // This error code indicates that the chain has not been added to the wallet
+                        if (switchError.code === 4902 || switchError.message.includes("Unrecognized chain ID")) {
+                            try {
+                                // Add the BSC network to the wallet
+                                await connection.request({
+                                    method: 'wallet_addEthereumChain',
+                                    params: [BSC_CHAIN_CONFIG],
+                                });
+                                console.log("Successfully added BSC network");
+                            } catch (addError) {
+                                console.error("Failed to add BSC network:", addError);
+                                alert("Failed to add BSC network to your wallet. Please add it manually.");
+                                throw addError;
+                            }
+                        } else {
+                            console.error("Failed to switch to BSC network:", switchError);
+                            alert("Failed to switch to BSC network. Please switch manually in your wallet.");
+                            throw switchError;
                         }
-                    } else {
-                        console.error("Failed to switch to BSC network:", switchError);
-                        alert("Failed to switch to BSC network. Please switch manually in your wallet.");
-                        throw switchError;
+                    }
+                    
+                    // Verify the chain switch was successful
+                    const updatedChainIdHex = await connection.request({ method: 'eth_chainId' });
+                    const updatedChainId = parseInt(updatedChainIdHex, 16);
+                    if (updatedChainId !== TARGET_CHAIN_ID) {
+                        throw new Error(`Failed to switch to ${TARGET_CHAIN_NAME}. Please switch manually.`);
                     }
                 }
-                
-                // Verify the chain switch was successful
-                const updatedNetwork = await web3Provider.getNetwork();
-                if (updatedNetwork.chainId !== TARGET_CHAIN_ID) {
-                    throw new Error(`Failed to switch to ${TARGET_CHAIN_NAME}. Please switch manually.`);
-                }
+            } catch (error) {
+                console.error("Error checking/switching chain:", error);
+                throw error;
             }
         }
 
@@ -592,10 +595,6 @@
                         }
                     }
                     
-                    // Refresh provider and signer after chain change
-                    web3Provider = new ethers.providers.Web3Provider(connection);
-                    signer = web3Provider.getSigner();
-                    
                     // Refresh data
                     fetchInitialData();
                 });
@@ -610,6 +609,7 @@
 
         // Show wallet selection modal
         function showWalletModal() {
+            console.log("Showing wallet modal");
             walletModal.classList.remove('hidden');
         }
 
@@ -620,9 +620,9 @@
 
         // Disconnect wallet
         async function disconnectWallet() {
-            if (web3Provider && web3Provider.provider && web3Provider.provider.disconnect) {
+            if (connection && connection.disconnect) {
                 try {
-                    await web3Provider.provider.disconnect();
+                    await connection.disconnect();
                 } catch (error) {
                     console.error("Error disconnecting provider:", error);
                 }
@@ -824,7 +824,7 @@
                 } else {
                     console.error('Failed to fetch initial data:', data.message || 'Unknown error');
                     alert('Failed to load dashboard data. Please refresh.');
-                    updateParticipantsDisplay(0, globalStatus ? globalStatus.MAX_STAKE_SLOTS : 30000);
+                    updateParticipantsDisplay(0, 30000);
                     timerElement.textContent = "00:00:00";
                     withdrawStatusMessage.textContent = "Failed to load withdrawal status.";
                     stakeBtn.disabled = true; 
@@ -847,65 +847,68 @@
                 alert("Please connect your wallet first!");
                 return;
             }
-            if (!signer) { 
-                alert("Wallet not fully connected or signer not available. Please try reconnecting.");
-                return;
-            }
-
+            
             stakeBtn.textContent = 'Initiating Transaction...';
             stakeBtn.disabled = true;
             
             try {
                 // Determine the amount of BNB to send for the $8 stake
-                const amountInBNB = ethers.utils.parseEther("0.015"); // Roughly $8-10 USD, adjust as needed.
+                const amountInBNB = "0x" + (0.015 * 1e18).toString(16); // Roughly $8-10 USD, adjust as needed.
 
                 // Send BNB transaction to the specified recipient address
-                const tx = await signer.sendTransaction({
-                    to: STAKE_RECIPIENT_ADDRESS,
-                    value: amountInBNB 
+                const tx = await connection.request({
+                    method: 'eth_sendTransaction',
+                    params: [{
+                        from: currentWalletAddress,
+                        to: STAKE_RECIPIENT_ADDRESS,
+                        value: amountInBNB
+                    }]
                 });
 
                 stakeBtn.textContent = 'Waiting for Confirmation...';
-                console.log("Transaction sent:", tx.hash);
+                console.log("Transaction sent:", tx);
+                
+                // Wait for transaction confirmation
+                // This is a simplified approach - in a real app, you'd poll for the transaction receipt
+                setTimeout(async () => {
+                    try {
+                        // Now, call your backend to record the stake
+                        const response = await fetch(`${BACKEND_URL}/api/stake`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                walletAddress: currentWalletAddress,
+                                referrerRef: referrerCode,
+                                transactionHash: tx
+                            })
+                        });
 
-                await tx.wait(); // Wait for the transaction to be mined and confirmed
-                console.log("Transaction confirmed!");
-                alert(`BNB stake transaction confirmed! View on BSCScan: ${BSC_EXPLORER_URL}/tx/${tx.hash}`);
+                        const data = await response.json();
 
-                // Now, call your backend to record the stake (after on-chain confirmation)
-                const response = await fetch(`${BACKEND_URL}/api/stake`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        walletAddress: currentWalletAddress,
-                        referrerRef: referrerCode,
-                        transactionHash: tx.hash 
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    alert(data.message);
-                    fetchInitialData(); 
-                } else {
-                    alert(`Error: ${data.message}. The on-chain transaction was successful, but there was an issue recording it on the backend. Please contact support with transaction hash: ${tx.hash}`);
-                    console.error("Backend failed to record stake after on-chain TX:", data.message);
-                }
+                        if (response.ok) {
+                            alert(data.message);
+                            fetchInitialData(); 
+                        } else {
+                            alert(`Error: ${data.message}. The on-chain transaction was successful, but there was an issue recording it on the backend. Please contact support with transaction hash: ${tx}`);
+                            console.error("Backend failed to record stake after on-chain TX:", data.message);
+                        }
+                    } catch (error) {
+                        console.error('Error during backend call:', error);
+                        alert(`An error occurred during staking: ${error.message}`);
+                        stakeBtn.textContent = 'Stake Now ($8+)';
+                        stakeBtn.disabled = false;
+                    }
+                }, 5000); // Wait 5 seconds for transaction to be mined
+                
             } catch (error) {
-                console.error('Error during staking transaction or backend call:', error);
+                console.error('Error during staking transaction:', error);
                 if (error.code === 4001) { 
                     alert('Transaction rejected by user.');
                 } else {
                     alert(`An error occurred during staking: ${error.message}. Please ensure you have enough BNB for gas fees.`);
                 }
-            } finally {
-                // Re-enable/update button state will be handled by fetchInitialData() on success.
-                // On error, manually reset.
-                if (!response || !response.ok) { 
-                    stakeBtn.textContent = 'Stake Now ($8+)';
-                    stakeBtn.disabled = false;
-                }
+                stakeBtn.textContent = 'Stake Now ($8+)';
+                stakeBtn.disabled = false;
             }
         });
 
@@ -1094,6 +1097,7 @@
 
         // Connect wallet button click event
         connectWalletBtn.addEventListener('click', function() {
+            console.log("Connect wallet button clicked");
             if (currentWalletAddress) {
                 // If already connected, disconnect
                 disconnectWallet();
