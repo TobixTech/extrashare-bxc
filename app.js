@@ -232,7 +232,7 @@ async function handleStake() {
         const amountBnb = amountUsd / bnbPriceUsd;
         const amountWei = web3.utils.toWei(amountBnb.toFixed(18), 'ether');
 
-        const stakeRecipientAddress = '0xYourStakeRecipientAddressHere'; // <--- UPDATE THIS IN PRODUCTION
+        const stakeRecipientAddress = '0x9FfDabC1b4e1d0a2B64045C32EBf3231F8541578'; // <--- UPDATE THIS IN PRODUCTION
 
         const transactionParameters = {
             to: stakeRecipientAddress,
