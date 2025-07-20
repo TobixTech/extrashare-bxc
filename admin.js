@@ -29,13 +29,29 @@ const adminControls = document.getElementById('adminControls');
 const connectedAdminWalletDisplay = document.getElementById('connectedAdminWallet');
 
 const adminEventTimerDisplay = document.getElementById('adminEventTimer');
+const eventTimerLabel = document.getElementById('eventTimerLabel'); // NEW: For "Ends In" / "Paused"
 const adminParticipantsCountDisplay = document.getElementById('adminParticipantsCount');
 const adminParticipantsProgressBar = document.getElementById('adminParticipantsProgressBar');
+
+// Admin Action Buttons
 const togglePauseBtn = document.getElementById('togglePauseBtn');
-const adminActionStatus = document.getElementById('adminActionStatus');
+const togglePauseStatus = document.getElementById('togglePauseStatus'); // For status messages
+
+const newEventDurationInput = document.getElementById('newEventDurationInput');
+const setEventTimeBtn = document.getElementById('setEventTimeBtn');
+const setEventTimeStatus = document.getElementById('setEventTimeStatus');
+
+const withdrawalsStatusDisplay = document.getElementById('withdrawalsStatusDisplay');
+const toggleWithdrawalsPauseBtn = document.getElementById('toggleWithdrawalsPauseBtn');
+const toggleWithdrawalsStatus = document.getElementById('toggleWithdrawalsStatus');
+
+const leaderboardSortBy = document.getElementById('leaderboardSortBy');
+const refreshLeaderboardBtn = document.getElementById('refreshLeaderboardBtn');
+const leaderboardTableBody = document.getElementById('leaderboardTableBody');
+const leaderboardStatus = document.getElementById('leaderboardStatus');
 
 
-// --- Utility Functions (Copied from app.js, can be a shared utility file later) ---
+// --- Utility Functions ---
 function updateStatusMessage(element, message, isError = false) {
     element.textContent = message;
     element.classList.remove('hidden', 'text-green-500', 'text-red-500');
@@ -53,27 +69,50 @@ function formatTime(seconds) {
 
 let adminEventTimerInterval; // Specific interval for admin timer
 
-function startAdminEventTimer(endTimeTimestamp, isPaused) {
+// Modified startAdminEventTimer to account for isPaused state
+function startAdminEventTimer(endTimeTimestamp, isPaused, eventStartTime) {
     if (adminEventTimerInterval) {
         clearInterval(adminEventTimerInterval);
     }
 
     const eventEndTimeMs = new Date(endTimeTimestamp).getTime();
+    const eventStartTimeMs = new Date(eventStartTime).getTime(); // New: to check if event has genuinely started
 
+    // If already paused, display PAUSED and stop timer
+    if (isPaused) {
+        adminEventTimerDisplay.textContent = "PAUSED";
+        eventTimerLabel.textContent = "Event Status";
+        togglePauseBtn.textContent = "Resume Event";
+        togglePauseBtn.disabled = false;
+        return;
+    }
+
+    // If event hasn't genuinely started yet (e.g. before first stake if logic dictates)
+    if (new Date().getTime() < eventStartTimeMs) {
+        adminEventTimerDisplay.textContent = "NOT STARTED";
+        eventTimerLabel.textContent = "Event Status";
+        togglePauseBtn.textContent = "Event Not Started";
+        togglePauseBtn.disabled = true;
+        return;
+    }
+
+    // If not paused, start/resume countdown
     adminEventTimerInterval = setInterval(() => {
         const now = new Date().getTime();
         const timeLeft = eventEndTimeMs - now;
 
-        if (timeLeft <= 0 || isPaused) { // Stop/pause timer display if event ended or is paused
+        if (timeLeft <= 0) {
             clearInterval(adminEventTimerInterval);
-            adminEventTimerDisplay.textContent = isPaused ? "PAUSED" : "00:00:00:00 (ENDED)";
-            togglePauseBtn.textContent = "Resume Event"; // Update button if paused or ended
-            togglePauseBtn.disabled = isPaused ? false : true; // Can't resume ended event
+            adminEventTimerDisplay.textContent = "00:00:00:00 (ENDED)";
+            eventTimerLabel.textContent = "Event Status";
+            togglePauseBtn.textContent = "Event Ended";
+            togglePauseBtn.disabled = true;
             return;
         }
 
         const secondsLeft = Math.floor(timeLeft / 1000);
         adminEventTimerDisplay.textContent = formatTime(secondsLeft);
+        eventTimerLabel.textContent = "Ends In"; // Default label
         togglePauseBtn.textContent = "Pause Event"; // Ensure button says pause if running
         togglePauseBtn.disabled = false;
     }, 1000);
@@ -111,16 +150,16 @@ async function checkAdminStatus(walletAddress) {
 
 async function fetchAdminDashboardData() {
     try {
-        const response = await fetch(`${BACKEND_URL}/api/status`, { // Re-use general status endpoint
+        const response = await fetch(`${BACKEND_URL}/api/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ walletAddress: selectedAdminAccount }) // Pass admin wallet for user-specific data
+            body: JSON.stringify({ walletAddress: selectedAdminAccount })
         });
         const data = await response.json();
 
         if (response.ok) {
             const globalData = data.global;
-            const participantsTotalSlots = globalData.MAX_STAKE_SLOTS; // Get total from global data
+            const participantsTotalSlots = globalData.MAX_STAKE_SLOTS;
             const stakedSlots = globalData.totalSlotsUsed || 0;
             const percentage = (stakedSlots / participantsTotalSlots) * 100;
 
@@ -129,17 +168,26 @@ async function fetchAdminDashboardData() {
 
             // Display timer
             if (globalData.eventEndTime) {
-                // Check for new isPaused field from backend (will add this to backend later)
                 const isEventPaused = globalData.isPaused || false; 
-                startAdminEventTimer(globalData.eventEndTime, isEventPaused);
-                togglePauseBtn.textContent = isEventPaused ? "Resume Event" : "Pause Event";
-                togglePauseBtn.disabled = false; // Enable if timer valid
+                const eventStartTime = globalData.eventStartTime; // Pass eventStartTime
+                startAdminEventTimer(globalData.eventEndTime, isEventPaused, eventStartTime);
             } else {
                 adminEventTimerDisplay.textContent = "No Event Set";
                 togglePauseBtn.disabled = true;
+                eventTimerLabel.textContent = "Event Status";
             }
 
-            return data; // Return full data if needed by other admin functions
+            // Update withdrawals status display
+            const withdrawalsPaused = globalData.withdrawalsPaused || false;
+            withdrawalsStatusDisplay.textContent = withdrawalsPaused ? "Paused" : "Active";
+            withdrawalsStatusDisplay.classList.toggle('text-red-500', withdrawalsPaused);
+            withdrawalsStatusDisplay.classList.toggle('text-highlight-green', !withdrawalsPaused);
+            toggleWithdrawalsPauseBtn.textContent = withdrawalsPaused ? "Resume All Withdrawals" : "Pause All Withdrawals";
+            toggleWithdrawalsPauseBtn.disabled = false;
+
+
+            fetchUsersLeaderboard(leaderboardSortBy.value); // Fetch leaderboard on dashboard load
+            return data;
         } else {
             updateStatusMessage(adminActionStatus, `Failed to load dashboard data: ${data.message}`, true);
             return null;
@@ -151,8 +199,156 @@ async function fetchAdminDashboardData() {
     }
 }
 
+// Handle toggling event pause
+async function handleTogglePause() {
+    if (!selectedAdminAccount) {
+        updateStatusMessage(togglePauseStatus, "Admin wallet not connected.", true);
+        return;
+    }
+    togglePauseBtn.disabled = true;
+    updateStatusMessage(togglePauseStatus, "Toggling event pause state...", false);
 
-// --- Wallet Connection Logic (Copied from app.js, with admin-specific selectedAccount variable) ---
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/toggle-event-pause`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ walletAddress: selectedAdminAccount })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            updateStatusMessage(togglePauseStatus, data.message, false);
+            fetchAdminDashboardData(); // Refresh admin UI to reflect new state
+        } else {
+            updateStatusMessage(togglePauseStatus, `Failed to toggle: ${data.message}`, true);
+            togglePauseBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error("Error toggling event pause:", error);
+        updateStatusMessage(togglePauseStatus, `Network error toggling pause.`, true);
+        togglePauseBtn.disabled = false;
+    }
+}
+
+// NEW FUNCTION: Handle setting new event time
+async function handleSetEventTime() {
+    if (!selectedAdminAccount) {
+        updateStatusMessage(setEventTimeStatus, "Admin wallet not connected.", true);
+        return;
+    }
+    const durationHours = parseFloat(newEventDurationInput.value);
+    if (isNaN(durationHours) || durationHours <= 0) {
+        updateStatusMessage(setEventTimeStatus, "Please enter a valid positive number for duration (hours).", true);
+        return;
+    }
+
+    setEventTimeBtn.disabled = true;
+    updateStatusMessage(setEventTimeStatus, `Setting new event duration to ${durationHours} hours...`, false);
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/set-event-time`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ walletAddress: selectedAdminAccount, durationHours: durationHours })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            updateStatusMessage(setEventTimeStatus, data.message, false);
+            newEventDurationInput.value = ''; // Clear input
+            fetchAdminDashboardData(); // Refresh admin UI to show new timer
+        } else {
+            updateStatusMessage(setEventTimeStatus, `Failed to set event time: ${data.message}`, true);
+            setEventTimeBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error("Error setting event time:", error);
+        updateStatusMessage(setEventTimeStatus, `Network error setting event time.`, true);
+        setEventTimeBtn.disabled = false;
+    }
+}
+
+// NEW FUNCTION: Handle toggling all withdrawals pause
+async function handleToggleWithdrawalsPause() {
+    if (!selectedAdminAccount) {
+        updateStatusMessage(toggleWithdrawalsStatus, "Admin wallet not connected.", true);
+        return;
+    }
+    toggleWithdrawalsPauseBtn.disabled = true;
+    updateStatusMessage(toggleWithdrawalsStatus, "Toggling withdrawals pause state...", false);
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/toggle-withdrawals-pause`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ walletAddress: selectedAdminAccount })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            updateStatusMessage(toggleWithdrawalsStatus, data.message, false);
+            fetchAdminDashboardData(); // Refresh admin UI to reflect new state
+        } else {
+            updateStatusMessage(toggleWithdrawalsStatus, `Failed to toggle: ${data.message}`, true);
+            toggleWithdrawalsPauseBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error("Error toggling withdrawals pause:", error);
+        updateStatusMessage(toggleWithdrawalsStatus, `Network error toggling withdrawals pause.`, true);
+        toggleWithdrawalsPauseBtn.disabled = false;
+    }
+}
+
+// NEW FUNCTION: Fetch and display users leaderboard
+async function fetchUsersLeaderboard(sortBy = 'referralCount') {
+    if (!selectedAdminAccount) {
+        updateStatusMessage(leaderboardStatus, "Admin wallet not connected.", true);
+        leaderboardTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Connect wallet to view leaderboard.</td></tr>';
+        return;
+    }
+    updateStatusMessage(leaderboardStatus, "Fetching users leaderboard...", false);
+    leaderboardStatus.classList.remove('hidden'); // Show status
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/users-leaderboard`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ walletAddress: selectedAdminAccount, sortBy: sortBy })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            leaderboardStatus.classList.add('hidden'); // Hide status on success
+            leaderboardTableBody.innerHTML = ''; // Clear previous data
+            if (data.users && data.users.length > 0) {
+                data.users.forEach(user => {
+                    const row = `
+                        <tr>
+                            <td class="font-mono">${user.walletAddress.substring(0, 6)}...${user.walletAddress.substring(user.walletAddress.length - 4)}</td>
+                            <td>${user.referralCount || 0}</td>
+                            <td>${(user.BXC_Balance || 0).toFixed(2)}</td>
+                            <td>${(user.AIN_Balance || 0).toFixed(2)}</td>
+                            <td>$${(user.stakedUSDValue || 0).toFixed(2)}</td>
+                        </tr>
+                    `;
+                    leaderboardTableBody.innerHTML += row;
+                });
+            } else {
+                leaderboardTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No users found.</td></tr>';
+            }
+        } else {
+            updateStatusMessage(leaderboardStatus, `Failed to fetch leaderboard: ${data.message}`, true);
+            leaderboardTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Error fetching data.</td></tr>';
+        }
+    } catch (error) {
+        console.error("Error fetching users leaderboard:", error);
+        updateStatusMessage(leaderboardStatus, `Network error fetching leaderboard.`, true);
+        leaderboardTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Network error.</td></tr>';
+    }
+}
+
+
+// --- Wallet Connection Logic ---
 
 const initializeWeb3 = async (provider) => {
     web3 = new Web3(provider);
@@ -178,13 +374,11 @@ const connectAdminWallet = async (walletName, provider) => {
             return false;
         }
 
-        walletModal.classList.add('hidden'); // Close modal on success
+        walletModal.classList.add('hidden'); 
         
-        // After successful connection and chain switch, verify admin status
         if (await checkAdminStatus(selectedAdminAccount)) {
-            fetchAdminDashboardData(); // Fetch dashboard data if admin
+            fetchAdminDashboardData(); 
         } else {
-            // Not an admin, clear message or redirect
             adminMessage.textContent = "Access Denied: Your connected wallet is not an authorized administrator.";
             adminControls.classList.add('hidden');
         }
@@ -217,8 +411,7 @@ const switchToBSC = async () => {
         if (switchError.code === 4902) {
             try {
                 await web3.currentProvider.request({
-                    method: 'wallet_addEthereumChain',
-                    params: [{
+                    method: 'wallet_addEthereumChain', params: [{
                         chainId: BSC_CHAIN_ID, chainName: 'BNB Smart Chain',
                         nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
                         rpcUrls: ['https://bsc-dataseed.binance.org/'], blockExplorerUrls: ['https://bscscan.com/']
@@ -238,7 +431,6 @@ const switchToBSC = async () => {
 };
 
 // --- Event Listeners ---
-
 connectWalletBtn.addEventListener('click', () => {
     walletModal.classList.remove('hidden');
     walletStatus.classList.add('hidden');
@@ -274,6 +466,14 @@ walletOptions.forEach(button => {
     });
 });
 
+// Admin specific button listeners
+togglePauseBtn.addEventListener('click', handleTogglePause);
+setEventTimeBtn.addEventListener('click', handleSetEventTime);
+toggleWithdrawalsPauseBtn.addEventListener('click', handleToggleWithdrawalsPause);
+refreshLeaderboardBtn.addEventListener('click', () => fetchUsersLeaderboard(leaderboardSortBy.value)); // Refresh button
+leaderboardSortBy.addEventListener('change', () => fetchUsersLeaderboard(leaderboardSortBy.value)); // Sort by dropdown
+
+
 // Listen for account/chain changes
 if (window.ethereum) {
     window.ethereum.on('accountsChanged', async (accounts) => {
@@ -298,7 +498,7 @@ if (window.ethereum) {
         console.log('Chain changed to:', chainId);
         if (web3.utils.toHex(chainId) !== BSC_CHAIN_ID) {
             updateStatusMessage(adminActionStatus, `Please switch to BNB Smart Chain (Chain ID 56). Current: ${chainId}`, true);
-            adminControls.classList.add('hidden'); // Hide controls if on wrong chain
+            adminControls.classList.add('hidden');
         } else {
             updateStatusMessage(adminActionStatus, `Successfully switched to BSC.`, false);
             if (selectedAdminAccount) {
