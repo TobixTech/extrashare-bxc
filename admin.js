@@ -16,7 +16,7 @@ let selectedAdminAccount = null;
 const BACKEND_URL = 'https://bxc-backend-1dkpqw.fly.dev'; // EXAMPLE: Replace with your actual deployed backend URL
 
 // --- DOM Element References ---
-const connectWalletBtn = document.getElementById('connectWalletBtn');
+const connectWalletBtn = document.getElementById('connectWalletBtn'); // The header button
 const walletModal = document.getElementById('walletModal');
 const closeModalBtn = document.getElementById('closeModalBtn');
 const walletOptions = document.querySelectorAll('.wallet-option');
@@ -29,13 +29,13 @@ const adminControls = document.getElementById('adminControls');
 const connectedAdminWalletDisplay = document.getElementById('connectedAdminWallet');
 
 const adminEventTimerDisplay = document.getElementById('adminEventTimer');
-const eventTimerLabel = document.getElementById('eventTimerLabel'); // NEW: For "Ends In" / "Paused"
+const eventTimerLabel = document.getElementById('eventTimerLabel'); // For "Ends In" / "Paused"
 const adminParticipantsCountDisplay = document.getElementById('adminParticipantsCount');
 const adminParticipantsProgressBar = document.getElementById('adminParticipantsProgressBar');
 
 // Admin Action Buttons
 const togglePauseBtn = document.getElementById('togglePauseBtn');
-const togglePauseStatus = document.getElementById('togglePauseStatus'); // For status messages
+const togglePauseStatus = document.getElementById('togglePauseStatus');
 
 const newEventDurationInput = document.getElementById('newEventDurationInput');
 const setEventTimeBtn = document.getElementById('setEventTimeBtn');
@@ -76,7 +76,7 @@ function startAdminEventTimer(endTimeTimestamp, isPaused, eventStartTime) {
     }
 
     const eventEndTimeMs = new Date(endTimeTimestamp).getTime();
-    const eventStartTimeMs = new Date(eventStartTime).getTime(); // New: to check if event has genuinely started
+    const eventStartTimeMs = new Date(eventStartTime).getTime();
 
     // If already paused, display PAUSED and stop timer
     if (isPaused) {
@@ -134,16 +134,28 @@ async function checkAdminStatus(walletAddress) {
             adminMessage.textContent = data.message;
             adminControls.classList.remove('hidden');
             connectedAdminWalletDisplay.textContent = walletAddress;
+            // Update the header connect button when access is granted
+            connectWalletBtn.textContent = `${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`;
+            connectWalletBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'text-white'); // Example connected styling
+            connectWalletBtn.classList.remove('bg-white', 'hover:bg-gray-100', 'text-cyan-700'); // Remove initial styling
             return true;
         } else {
             adminMessage.textContent = data.message || "Access Denied: You are not an authorized administrator.";
             adminControls.classList.add('hidden');
+            // Revert header connect button if access denied
+            connectWalletBtn.textContent = 'Connect Admin Wallet';
+            connectWalletBtn.classList.add('bg-white', 'hover:bg-gray-100', 'text-cyan-700');
+            connectWalletBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'text-white');
             return false;
         }
     } catch (error) {
         console.error("Error checking admin status:", error);
         adminMessage.textContent = "Error verifying admin access. Network issue or backend problem.";
         adminControls.classList.add('hidden');
+        // Revert header connect button on error
+        connectWalletBtn.textContent = 'Connect Admin Wallet';
+        connectWalletBtn.classList.add('bg-white', 'hover:bg-gray-100', 'text-cyan-700');
+        connectWalletBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'text-white');
         return false;
     }
 }
@@ -166,10 +178,9 @@ async function fetchAdminDashboardData() {
             adminParticipantsCountDisplay.textContent = `${stakedSlots}/${participantsTotalSlots}`;
             adminParticipantsProgressBar.style.width = `${percentage}%`;
 
-            // Display timer
             if (globalData.eventEndTime) {
                 const isEventPaused = globalData.isPaused || false; 
-                const eventStartTime = globalData.eventStartTime; // Pass eventStartTime
+                const eventStartTime = globalData.eventStartTime;
                 startAdminEventTimer(globalData.eventEndTime, isEventPaused, eventStartTime);
             } else {
                 adminEventTimerDisplay.textContent = "No Event Set";
@@ -186,7 +197,7 @@ async function fetchAdminDashboardData() {
             toggleWithdrawalsPauseBtn.disabled = false;
 
 
-            fetchUsersLeaderboard(leaderboardSortBy.value); // Fetch leaderboard on dashboard load
+            fetchUsersLeaderboard(leaderboardSortBy.value); 
             return data;
         } else {
             updateStatusMessage(adminActionStatus, `Failed to load dashboard data: ${data.message}`, true);
@@ -218,7 +229,7 @@ async function handleTogglePause() {
 
         if (response.ok) {
             updateStatusMessage(togglePauseStatus, data.message, false);
-            fetchAdminDashboardData(); // Refresh admin UI to reflect new state
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(togglePauseStatus, `Failed to toggle: ${data.message}`, true);
             togglePauseBtn.disabled = false;
@@ -255,8 +266,8 @@ async function handleSetEventTime() {
 
         if (response.ok) {
             updateStatusMessage(setEventTimeStatus, data.message, false);
-            newEventDurationInput.value = ''; // Clear input
-            fetchAdminDashboardData(); // Refresh admin UI to show new timer
+            newEventDurationInput.value = '';
+            fetchAdminDashboardData();
         } else {
             updateStatusMessage(setEventTimeStatus, `Failed to set event time: ${data.message}`, true);
             setEventTimeBtn.disabled = false;
@@ -287,7 +298,7 @@ async function handleToggleWithdrawalsPause() {
 
         if (response.ok) {
             updateStatusMessage(toggleWithdrawalsStatus, data.message, false);
-            fetchAdminDashboardData(); // Refresh admin UI to reflect new state
+            fetchAdminDashboardData();
         } else {
             updateStatusMessage(toggleWithdrawalsStatus, `Failed to toggle: ${data.message}`, true);
             toggleWithdrawalsPauseBtn.disabled = false;
@@ -307,7 +318,7 @@ async function fetchUsersLeaderboard(sortBy = 'referralCount') {
         return;
     }
     updateStatusMessage(leaderboardStatus, "Fetching users leaderboard...", false);
-    leaderboardStatus.classList.remove('hidden'); // Show status
+    leaderboardStatus.classList.remove('hidden');
 
     try {
         const response = await fetch(`${BACKEND_URL}/api/admin/users-leaderboard`, {
@@ -318,8 +329,8 @@ async function fetchUsersLeaderboard(sortBy = 'referralCount') {
         const data = await response.json();
 
         if (response.ok) {
-            leaderboardStatus.classList.add('hidden'); // Hide status on success
-            leaderboardTableBody.innerHTML = ''; // Clear previous data
+            leaderboardStatus.classList.add('hidden');
+            leaderboardTableBody.innerHTML = '';
             if (data.users && data.users.length > 0) {
                 data.users.forEach(user => {
                     const row = `
@@ -359,7 +370,7 @@ const initializeWeb3 = async (provider) => {
 const connectAdminWallet = async (walletName, provider) => {
     try {
         if (!provider) {
-            updateStatusMessage(walletStatus, `${walletName} is not installed. Please install it.`, true);
+            updateStatusMessage(walletStatus, `${walletName} is not detected. Please install it.`, true);
             return false;
         }
 
@@ -367,7 +378,7 @@ const connectAdminWallet = async (walletName, provider) => {
         const accounts = await web3.eth.requestAccounts();
         selectedAdminAccount = accounts[0];
         updateStatusMessage(walletStatus, `Wallet connected. Verifying admin status...`, false);
-
+        
         const chainSwitched = await switchToBSC();
         if (!chainSwitched) {
             updateStatusMessage(walletStatus, `Please switch to BNB Smart Chain (Chain ID 56) manually.`, true);
@@ -376,11 +387,11 @@ const connectAdminWallet = async (walletName, provider) => {
 
         walletModal.classList.add('hidden'); 
         
+        // After successful connection and chain switch, verify admin status
         if (await checkAdminStatus(selectedAdminAccount)) {
             fetchAdminDashboardData(); 
         } else {
-            adminMessage.textContent = "Access Denied: Your connected wallet is not an authorized administrator.";
-            adminControls.classList.add('hidden');
+            // checkAdminStatus already updates the button and message, so nothing extra here
         }
         return true;
 
@@ -470,8 +481,8 @@ walletOptions.forEach(button => {
 togglePauseBtn.addEventListener('click', handleTogglePause);
 setEventTimeBtn.addEventListener('click', handleSetEventTime);
 toggleWithdrawalsPauseBtn.addEventListener('click', handleToggleWithdrawalsPause);
-refreshLeaderboardBtn.addEventListener('click', () => fetchUsersLeaderboard(leaderboardSortBy.value)); // Refresh button
-leaderboardSortBy.addEventListener('change', () => fetchUsersLeaderboard(leaderboardSortBy.value)); // Sort by dropdown
+refreshLeaderboardBtn.addEventListener('click', () => fetchUsersLeaderboard(leaderboardSortBy.value));
+leaderboardSortBy.addEventListener('change', () => fetchUsersLeaderboard(leaderboardSortBy.value));
 
 
 // Listen for account/chain changes
@@ -482,6 +493,10 @@ if (window.ethereum) {
             selectedAdminAccount = null;
             adminMessage.textContent = "Please connect your wallet to verify admin access.";
             adminControls.classList.add('hidden');
+            // Revert header connect button on disconnection
+            connectWalletBtn.textContent = 'Connect Admin Wallet';
+            connectWalletBtn.classList.add('bg-white', 'hover:bg-gray-100', 'text-cyan-700');
+            connectWalletBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'text-white');
         } else {
             selectedAdminAccount = accounts[0];
             console.log('Admin Account changed to:', selectedAdminAccount);
