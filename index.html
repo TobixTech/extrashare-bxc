@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XtraShare BXC - Staking DApp</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #FFFFFF; /* Pure White background */
+            background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.03"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"%3E%3C/path%3E%3C/g%3E%3C/g%3E%3C/svg%3E'); /* Subtle geometric pattern */
+            background-repeat: repeat;
+            color: #1A202C; /* Very dark gray for general text (almost black) */
+        }
+
+        /* Custom Gradients - Cyan and Black focused */
+        .gradient-main-header {
+            background-image: linear-gradient(to right, #06B6D4, #0891B2); /* Cyan to Darker Cyan */
+        }
+        .gradient-accent-text {
+            background-image: linear-gradient(to right, #06B6D4, #22D3EE); /* Cyan to Lighter Cyan */
+        }
+        .gradient-button-primary {
+            background-image: linear-gradient(to right, #06B6D4, #0891B2); /* Cyan to Darker Cyan for CTA buttons */
+        }
+        .gradient-button-black {
+            background-image: linear-gradient(to right, #1F2937, #000000); /* Dark Gray to Black for secondary buttons */
+        }
+        /* New for highlights: */
+        .text-highlight-cyan {
+            color: #06B6D4; /* A specific cyan for important text */
+        }
+        .text-highlight-black {
+            color: #1A202C; /* A specific dark text for contrast */
+        }
+        .text-highlight-green {
+            color: #10B981; /* A consistent green for positive values */
+        }
+
+
+        /* Glassmorphism Effect for white background with PROMINENT shadows */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.75); /* Slightly more opaque white for light theme */
+            backdrop-filter: blur(25px); /* Even stronger blur for distinct glass effect */
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 18px; /* Consistent rounded corners */
+            border: 1px solid rgba(0, 0, 0, 0.08); /* A bit stronger border for definition */
+            box-shadow: 0 15px 35px 0 rgba(0, 0, 0, 0.2); /* VERY prominent shadow */
+            transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); /* Smoother, bouncier transitions */
+        }
+
+        /* Interactive Element Effects - EXTREME 3D feel */
+        .interactive-glass-card:hover {
+            transform: translateY(-10px); /* Significant lift */
+            box-shadow: 0 25px 50px 0 rgba(0, 0, 0, 0.35); /* Much stronger shadow on hover */
+        }
+        .interactive-button {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25); /* Default button shadow */
+        }
+        .interactive-button:hover {
+            transform: translateY(-4px); /* More noticeable lift on hover */
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4); /* Stronger shadow on hover */
+        }
+        .interactive-button:active {
+            transform: translateY(2px); /* Deeper press down on click */
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); /* Reduced shadow for pressed state */
+        }
+        
+        /* Text gradient clip */
+        .bg-clip-text {
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        /* Progress Bar styles */
+        .progress-bar-container {
+            width: 100%;
+            background-color: #E5E7EB; /* Light gray track */
+            border-radius: 9999px; /* Fully rounded */
+            height: 12px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%; /* Will be set by JS */
+            background-image: linear-gradient(to right, #06B6D4, #22D3EE); /* Cyan gradient fill */
+            border-radius: 9999px;
+            transition: width 0.5s ease-in-out;
+        }
+
+
+        /* Flip Card Specific Styles (adapted for light theme and shadows) */
+        .flip-card {
+            perspective: 1000px;
+            height: 250px;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            border-radius: 18px;
+        }
+
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 2rem;
+            border-radius: inherit;
+            color: #1A202C; /* Dark text for light background */
+        }
+
+        .flip-card-front {
+            background: rgba(255, 255, 255, 0.75); /* Glass effect */
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 15px 35px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .flip-card-back {
+            background: rgba(255, 255, 255, 0.85); /* Slightly more opaque glass for back */
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            box-shadow: 0 15px 35px 0 rgba(0, 0, 0, 0.25);
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="text-black font-sans min-h-screen flex flex-col">
+
+    <header class="w-full bg-gradient-to-r from-cyan-600 to-blue-700 py-4 px-6 md:px-12 flex flex-col sm:flex-row justify-between items-center z-10 relative shadow-lg">
+        <div class="flex items-center space-x-3 mb-2 sm:mb-0">
+            <img src="https://xtrashare-bxc.vercel.app/logo.png" alt="Logo" class="h-10 w-10">
+            <h1 class="text-3xl font-bold text-white">XtraShare BXC</h1>
+        </div>
+        <button id="connectWalletBtn" class="bg-white hover:bg-gray-100 text-cyan-700 font-semibold py-2 px-6 rounded-full interactive-button">
+            Connect Wallet
+        </button>
+    </header>
+
+    <div class="w-full bg-black py-3 px-6 text-center shadow-lg z-10">
+        <p class="text-gray-200 text-lg sm:text-xl font-semibold">Event Ends In:</p>
+        <p id="eventTimer" class="text-4xl sm:text-5xl font-extrabold text-highlight-cyan tracking-wide">
+            00:00:00:00
+        </p>
+    </div>
+
+    <main class="flex-grow p-4 md:p-8 flex items-center justify-center">
+        <div class="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+
+            <div class="lg:col-span-1 xl:col-span-2 space-y-6">
+                <div class="glass-card p-6 interactive-glass-card">
+                    <h2 class="text-2xl font-bold mb-4 gradient-main-header bg-clip-text text-transparent">Stake Now</h2>
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+                        <p class="text-lg text-gray-700">Minimum Stake: <span class="font-bold text-highlight-cyan">$8 USD</span> (one-time)</p>
+                        <p class="text-lg text-gray-700">Current Staked Value: <span id="currentStakeValue" class="font-bold text-highlight-green">$0.00</span></p>
+                    </div>
+
+                    <div class="mb-6 border-t border-gray-200 pt-6 mt-6"> <div class="flex justify-between items-baseline text-lg font-medium text-gray-700 mb-2">
+                            <span>Participants: <span id="participantsCount">0/30,000</span></span>
+                            <span id="participantsPercentage">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div id="participantsProgressBar" class="progress-bar-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button id="stakeBtn" class="w-full gradient-button-primary hover:opacity-90 text-white font-bold py-3 px-6 rounded-full interactive-button">
+                            Stake $8
+                        </button>
+                        <button id="withdrawStakeBtn" class="w-full gradient-button-black hover:opacity-90 text-white font-bold py-3 px-6 rounded-full interactive-button">
+                            Withdraw Stake
+                        </button>
+                    </div>
+                    <p id="stakeStatus" class="mt-4 text-center text-sm text-red-500 hidden"></p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1 xl:col-span-1">
+                </div>
+            
+            <div class="lg:col-span-2 xl:col-span-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                 <div class="glass-card p-6 interactive-glass-card">
+                    <h2 class="text-2xl font-bold mb-4 gradient-accent-text bg-clip-text text-transparent">BXC Token System</h2>
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+                        <div>
+                            <p class="text-lg text-gray-700">Your BXC Balance:</p>
+                            <p id="bxcBalance" class="text-4xl font-extrabold text-highlight-cyan">0 BXC</p>
+                            <p class="text-sm text-gray-600">(Initial 8000 BXC on stake)</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg text-gray-700">Accrual Rate:</p>
+                            <p class="text-3xl font-bold text-highlight-cyan">+2400 BXC/day</p>
+                        </div>
+                    </div>
+                    <button id="withdrawBxcBtn" class="w-full gradient-button-black hover:opacity-90 text-white font-bold py-3 px-6 rounded-full interactive-button">
+                        Withdraw BXC
+                    </button>
+                    <p id="bxcWithdrawStatus" class="mt-4 text-center text-sm text-red-500 hidden"></p>
+                </div>
+
+                <div class="glass-card p-6 interactive-glass-card flip-card" id="rewardFlipCard">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front glass-card">
+                            <h3 class="text-2xl font-bold gradient-main-header bg-clip-text text-transparent mb-4">Your Event Reward</h3>
+                            <p class="text-gray-700 text-lg">Click to reveal your reward after the event ends!</p>
+                            <button id="flipRewardBtn" class="mt-6 gradient-button-primary hover:opacity-90 text-white font-bold py-3 px-6 rounded-full interactive-button">
+                                Reveal Reward
+                            </button>
+                            <p id="rewardStatus" class="mt-4 text-center text-sm text-red-500 hidden"></p>
+                        </div>
+
+                        <div class="flip-card-back glass-card">
+                            <h3 class="text-2xl font-bold gradient-main-header bg-clip-text text-transparent mb-4">Congratulations!</h3>
+                            <p class="text-gray-700 text-lg">You've won:</p>
+                            <p id="revealedRewardAmount" class="text-5xl font-extrabold text-highlight-cyan my-4">$0.00</p>
+                            <button id="collectRewardBtn" class="mt-6 gradient-button-primary hover:opacity-90 text-white font-bold py-3 px-6 rounded-full interactive-button">
+                                Collect Reward
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6 interactive-glass-card">
+                    <h2 class="text-2xl font-bold mb-4 gradient-accent-text bg-clip-text text-transparent">Partnered Coin Rewards</h2>
+                    <div class="flex flex-col items-center justify-center gap-4 mb-6">
+                        <p class="text-lg text-gray-700">Total Earned:</p>
+                        <p id="partneredCoinEarned" class="text-4xl font-extrabold text-highlight-cyan">$0.00 USD</p>
+                    </div>
+                    <button id="withdrawPartneredCoinBtn" class="w-full gradient-button-black hover:opacity-90 text-white font-bold py-3 px-6 rounded-full interactive-button">
+                        Withdraw Partnered Coin
+                    </button>
+                    <p id="partneredCoinStatus" class="mt-4 text-center text-sm text-red-500 hidden"></p>
+                </div>
+
+                <div class="glass-card p-6 interactive-glass-card text-center">
+                    <h2 class="text-2xl font-bold mb-4 gradient-main-header bg-clip-text text-transparent">Exclusive Rewards</h2>
+                    <p class="text-gray-700 text-lg">
+                        <span class="font-bold text-highlight-cyan">Lucky 9,000 participants</span> from the 30,000 total slots
+                        will be <span class="font-bold text-highlight-cyan">randomly selected</span> to receive Partnered Coin rewards
+                        from the event's flip card!
+                    </p>
+                </div>
+
+                <div class="glass-card p-6 interactive-glass-card">
+                    <h2 class="text-2xl font-bold mb-4 gradient-accent-text bg-clip-text text-transparent">Referral System</h2>
+                    <p class="text-lg text-gray-700 mb-2">Your Referral Code:</p>
+                    <div class="flex items-center glass-card p-3 rounded-lg border border-gray-300 mb-4">
+                        <span id="referralCodeDisplay" class="flex-grow text-gray-800 font-mono text-center text-xl sm:text-2xl">
+                            ••••••
+                        </span>
+                        <button id="copyReferralCodeBtn" class="ml-4 p-2 bg-cyan-600 rounded-full hover:bg-cyan-700 transition duration-200 ease-in-out interactive-button">
+                            <i class="fas fa-copy text-white"></i>
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4 text-center">Last 6 characters of your wallet address.</p>
+
+                    <p class="text-lg text-gray-700 mb-2">Your Referral Link:</p>
+                    <div class="flex items-center glass-card p-3 rounded-lg border border-gray-300 mb-4">
+                        <span id="referralLinkDisplay" class="flex-grow text-gray-800 font-mono text-center text-sm sm:text-base break-all">
+                            https://xtrashare-bxc.vercel.app/••••••
+                        </span>
+                        <button id="copyReferralLinkBtn" class="ml-4 p-2 bg-cyan-600 rounded-full hover:bg-cyan-700 transition duration-200 ease-in-out interactive-button">
+                            <i class="fas fa-copy text-white"></i>
+                        </button>
+                    </div>
+                    
+                    <p class="text-lg text-gray-700 mb-2">Referral Bonus:</p>
+                    <p class="text-3xl font-extrabold text-highlight-cyan text-center mb-4">
+                        <i class="fas fa-gift mr-2"></i>+1050 BXC <span class="text-xl text-gray-600">per referred stake!</span>
+                    </p>
+                    <p class="text-center text-md text-gray-600">
+                        <i class="fas fa-share-alt mr-2"></i>+50 BXC for each referral link copy!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="walletModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        <div class="glass-card p-8 rounded-lg shadow-xl w-full max-w-md mx-4 relative">
+            <button id="closeModalBtn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            <h2 class="text-3xl font-bold mb-6 text-center gradient-accent-text bg-clip-text text-transparent">Connect Wallet</h2>
+
+            <div class="space-y-4">
+                <button class="wallet-option w-full p-4 flex items-center justify-between glass-card rounded-lg transition duration-200 ease-in-out hover:bg-gray-100" data-wallet="metamask">
+                    <span class="font-semibold text-lg text-gray-800">MetaMask</span>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" class="w-8 h-8">
+                </button>
+                <button class="wallet-option w-full p-4 flex items-center justify-between glass-card rounded-lg transition duration-200 ease-in-out hover:bg-gray-100" data-wallet="bitget">
+                    <span class="font-semibold text-lg text-gray-800">BitGet Wallet</span>
+                    <img src="https://bitget.com/assets/images/logo/bitget_logo_white.svg" alt="BitGet" class="w-8 h-8 filter invert">
+                </button>
+                <button class="wallet-option w-full p-4 flex items-center justify-between glass-card rounded-lg transition duration-200 ease-in-out hover:bg-gray-100" data-wallet="okx">
+                    <span class="font-semibold text-lg text-gray-800">OKX Wallet</span>
+                    <img src="https://www.okx.com/cdn/assets/imgs/220/266A451296537659.png" alt="OKX" class="w-8 h-8 filter invert">
+                </button>
+                <button class="wallet-option w-full p-4 flex items-center justify-between glass-card rounded-lg transition duration-200 ease-in-out hover:bg-gray-100" data-wallet="trust">
+                    <span class="font-semibold text-lg text-gray-800">Trust Wallet</span>
+                    <img src="https://trustwallet.com/assets/images/media/assets/TWT.png" alt="Trust Wallet" class="w-8 h-8">
+                </button>
+            </div>
+
+            <p id="walletStatus" class="mt-6 text-center text-sm text-red-500 hidden"></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
