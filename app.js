@@ -190,7 +190,7 @@ async function handleStake() {
         const amountWei = web3.utils.toWei(amountBnb.toFixed(18), 'ether');
 
         // Address to send BNB to (replace with your actual STAKE_RECIPIENT_ADDRESS from backend config)
-        const stakeRecipientAddress = '0xYourStakeRecipientAddressHere'; // Get this from your backend environment or a config
+        const stakeRecipientAddress = '0x78528ea01Cdc703cc3414035141F78Fe0EB6f5e7'; // Get this from your backend environment or a config
 
         const transactionParameters = {
             to: stakeRecipientAddress,
