@@ -1,3 +1,5 @@
+// app.js
+
 // Ensure Web3.js is available
 if (typeof window.Web3 === 'undefined') {
     console.error("Web3.js is not loaded. Please ensure the CDN link is correct in your HTML.");
@@ -17,7 +19,8 @@ let eventEndTime = null; // Will store the timestamp when the event ends
 let bxcAccrualInterval = null; // To hold the interval for BXC accrual
 
 // Backend URL (placeholder - UPDATE THIS WITH YOUR DEPLOYED BACKEND URL)
-const BACKEND_URL = 'https://bxc-backend-1dkpqw.fly.dev/'; 
+// THIS IS CRUCIAL: ENSURE THIS EXACTLY MATCHES YOUR DEPLOYED BACKEND URL
+const BACKEND_URL = 'https://bxc-backend-1dkpqw.fly.dev'; // EXAMPLE: Make sure YOUR URL is here
 
 // --- DOM Element References ---
 const connectWalletBtn = document.getElementById('connectWalletBtn');
@@ -63,6 +66,7 @@ function updateStatusMessage(element, message, isError = false) {
     element.textContent = message;
     element.classList.remove('hidden', 'text-green-500', 'text-red-500');
     element.classList.add(isError ? 'text-red-500' : 'text-green-500');
+    // console.log(`Status update for ${element.id || 'unknown'}: ${message}`); // Keep console log for mobile debugging later
 }
 
 function formatTime(seconds) {
@@ -85,17 +89,22 @@ function updateParticipantsUI(stakedSlots) {
 function startEventTimer(endTimeTimestamp) {
     eventEndTime = new Date(endTimeTimestamp).getTime();
     
-    const timerInterval = setInterval(() => {
+    // Clear any existing timer to prevent multiple intervals
+    if (window.eventTimerInterval) {
+        clearInterval(window.eventTimerInterval);
+    }
+
+    window.eventTimerInterval = setInterval(() => {
         const now = new Date().getTime();
         const timeLeft = eventEndTime - now;
 
         if (timeLeft <= 0) {
-            clearInterval(timerInterval);
+            clearInterval(window.eventTimerInterval);
             eventTimerDisplay.textContent = "00:00:00:00";
             console.log("Event has ended.");
-            // Disable staking and reward revealing after event ends
+            // Disable staking and enable reward revealing after event ends
             stakeBtn.disabled = true;
-            flipRewardBtn.disabled = false; // Enable revealing if it was disabled before event end
+            // flipRewardBtn.disabled = false; // Enable revealing if it was disabled before event end
             return;
         }
 
@@ -106,77 +115,108 @@ function startEventTimer(endTimeTimestamp) {
 
 function updateDashboardUI(data) {
     // Update Participants
-    updateParticipantsUI(data.slotsStaked || 0);
+    updateParticipantsUI(data.global.totalSlotsUsed || 0);
 
     // Update Event Timer (if an end time is provided by backend)
-    if (data.eventEndTime) {
-        startEventTimer(data.eventEndTime);
+    if (data.global.eventEndTime) {
+        startEventTimer(data.global.eventEndTime);
     } else {
-        eventTimerDisplay.textContent = "Event Not Started"; // Or some default
+        eventTimerDisplay.textContent = "00:00:00:00"; // Display 0s if event not started
+        // Also ensure UI elements related to event end are handled if eventEndTime is null
+        stakeBtn.disabled = false; // Allow stake to start event
+        flipRewardBtn.disabled = true; // No reveal if event not active
     }
     
-    // Update Staking Info
-    currentStakeValueDisplay.textContent = `$${(data.stakedUSDValue || 0).toFixed(2)}`;
+    // Update User-Specific Info if connected
+    if (data.user) {
+        currentStakeValueDisplay.textContent = `$${(data.user.stakedUSDValue || 0).toFixed(2)}`;
+        bxcBalanceDisplay.textContent = `${(data.user.BXC_Balance || 0).toFixed(4)} BXC`;
+        partneredCoinEarnedDisplay.textContent = `${(data.user.AIN_Balance || 0).toFixed(4)} AIN`; // Assuming AIN_Balance field from backend
+        
+        // Referral Code & Link
+        referralCodeDisplay.textContent = data.user.referralCode || 'Connect Wallet';
+        referralLinkDisplay.textContent = `${window.location.origin}/?ref=${data.user.referralCode || 'YOURCODE'}`; // Update base URL as needed
 
-    // Update BXC Balance
-    bxcBalanceDisplay.textContent = `${(data.BXC_Balance || 0).toFixed(4)} BXC`;
+        // Handle button states based on user data
+        stakeBtn.disabled = data.user.slotsStaked > 0; // Disable stake if already staked
+        withdrawStakeBtn.disabled = !(data.user.slotsStaked > 0); // Enable withdraw only if staked
 
-    // Update Partnered Coin Earned
-    partneredCoinEarnedDisplay.textContent = `${(data.AIN_Balance || 0).toFixed(4)} AIN`; // Assuming AIN_Balance field from backend
+        // Enable flip if event has ended AND user staked AND user hasn't revealed yet for this cycle
+        const now = new Date().getTime();
+        const eventEnded = data.global.eventEndTime && now >= new Date(data.global.eventEndTime).getTime();
+        const hasNotRevealedThisCycle = !data.user.claimedEventRewardTime || (data.global.eventStartTime && new Date(data.user.claimedEventRewardTime).getTime() < new Date(data.global.eventStartTime).getTime());
+        
+        flipRewardBtn.disabled = !(data.user.slotsStaked > 0 && eventEnded && hasNotRevealedThisCycle);
+        
+        // Enable collect button only if reward revealed and not collected for this cycle
+        const hasRevealedAndNotCollected = data.user.lastRevealedUSDAmount > 0 && (!data.user.collectedEventRewardTime || (data.global.eventStartTime && new Date(data.user.collectedEventRewardTime).getTime() < new Date(data.global.eventStartTime).getTime()));
+        collectRewardBtn.disabled = !hasRevealedAndNotCollected;
+        
+        withdrawBxcBtn.disabled = !(data.user.BXC_Balance > 0); // Enable BXC withdraw if balance > 0
+        withdrawPartneredCoinBtn.disabled = !(data.user.AIN_Balance > 0); // Enable AIN withdraw if balance > 0
 
-    // Update Referral Code & Link
-    if (data.referralCode) {
-        referralCodeDisplay.textContent = data.referralCode;
-        referralLinkDisplay.textContent = `${window.location.origin}/?ref=${data.referralCode}`; // Or your Vercel/Netlify URL
+        // If user has staked and eventEndTime is available, start BXC accrual
+        if (data.user.slotsStaked > 0 && data.global.eventEndTime) {
+            startBXCAccrual(data.user.BXC_Balance, data.global.eventEndTime, data.user.lastBXCAccrualTime);
+        } else {
+             if (bxcAccrualInterval) clearInterval(bxcAccrualInterval); // Stop accrual if not staked or event hasn't started/ended
+        }
+
     } else {
+        // If no user connected, reset user-specific UI
+        currentStakeValueDisplay.textContent = `$0.00`;
+        bxcBalanceDisplay.textContent = `0.0000 BXC`;
+        partneredCoinEarnedDisplay.textContent = `0.0000 AIN`;
         referralCodeDisplay.textContent = 'Connect Wallet';
-        referralLinkDisplay.textContent = 'Connect Wallet';
-    }
+        referralLinkDisplay.textContent = `${window.location.origin}/?ref=YOURCODE`;
+        
+        // Disable user-specific buttons
+        stakeBtn.disabled = false; // Allow connecting to then stake
+        withdrawStakeBtn.disabled = true;
+        withdrawBxcBtn.disabled = true;
+        flipRewardBtn.disabled = true;
+        collectRewardBtn.disabled = true;
+        withdrawPartneredCoinBtn.disabled = true;
 
-    // Handle button states based on data (e.g., if staked, enable withdraw)
-    stakeBtn.disabled = data.stakedUSDValue > 0; // Disable stake if already staked
-    withdrawStakeBtn.disabled = !(data.stakedUSDValue > 0); // Enable withdraw only if staked
-    flipRewardBtn.disabled = !data.claimedEventRewardTime; // Only enable flip if event reward is ready/claimed (logic to be refined)
-    collectRewardBtn.disabled = !(data.lastRevealedUSDAmount > 0 && !data.collectedEventRewardTime); // Enable collect only if revealed and not collected
-    withdrawBxcBtn.disabled = !(data.BXC_Balance > 0); // Enable BXC withdraw if balance > 0
-    withdrawPartneredCoinBtn.disabled = !(data.AIN_Balance > 0); // Enable AIN withdraw if balance > 0
+        if (bxcAccrualInterval) clearInterval(bxcAccrualInterval); // Stop accrual if no user
+    }
 }
 
 
-// --- Backend API Interactions (Placeholder Functions) ---
+// --- Backend API Interactions ---
 
 async function fetchStatus(walletAddress = null) {
+    alert("Entering fetchStatus function."); // DEBUG ALERT
     try {
         const response = await fetch(`${BACKEND_URL}/api/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ walletAddress })
         });
+        alert(`Fetch status response received. Status: ${response.status}`); // DEBUG ALERT
+
         const data = await response.json();
         if (response.ok) {
             console.log("Status fetched:", data);
             updateDashboardUI(data);
-            // If user has staked and eventEndTime is available, start BXC accrual
-            if (data.stakedUSDValue > 0 && data.eventEndTime) {
-                startBXCAccrual(data.BXC_Balance, data.eventEndTime, data.lastBXCAccrualTime);
-            }
         } else {
             console.error("Failed to fetch status:", data.message);
             updateStatusMessage(stakeStatus, `Failed to load dashboard: ${data.message}`, true);
+            alert(`Error fetching status: ${data.message}`); // DEBUG ALERT
         }
     } catch (error) {
         console.error("Error fetching status:", error);
-        updateStatusMessage(stakeStatus, `Network error loading dashboard.`, true);
+        updateStatusMessage(stakeStatus, `Network error loading dashboard. Check console/logs.`, true);
+        alert(`Network request failed in fetchStatus: ${error.message}`); // DEBUG ALERT
     }
 }
 
 async function handleStake() {
+    alert("Stake button clicked."); // DEBUG ALERT
     if (!selectedAccount) {
         updateStatusMessage(stakeStatus, "Please connect your wallet first.", true);
         return;
     }
-    // Implement BNB transaction for $8 USD equivalent here
-    // For now, simulate success and call backend
     updateStatusMessage(stakeStatus, "Initiating stake transaction...", false);
 
     try {
@@ -190,7 +230,7 @@ async function handleStake() {
         const amountWei = web3.utils.toWei(amountBnb.toFixed(18), 'ether');
 
         // Address to send BNB to (replace with your actual STAKE_RECIPIENT_ADDRESS from backend config)
-        const stakeRecipientAddress = '0x78528ea01Cdc703cc3414035141F78Fe0EB6f5e7'; // Get this from your backend environment or a config
+        const stakeRecipientAddress = '0xYourStakeRecipientAddressHere'; // <--- UPDATE THIS IN PRODUCTION
 
         const transactionParameters = {
             to: stakeRecipientAddress,
@@ -224,10 +264,12 @@ async function handleStake() {
     } catch (error) {
         console.error("Stake transaction error:", error);
         updateStatusMessage(stakeStatus, `Stake transaction failed: ${error.message}`, true);
+        alert(`Stake transaction error: ${error.message}`); // DEBUG ALERT
     }
 }
 
 async function handleWithdrawStake() {
+    alert("Withdraw Stake button clicked."); // DEBUG ALERT
     if (!selectedAccount) return updateStatusMessage(stakeStatus, "Wallet not connected.", true);
     updateStatusMessage(stakeStatus, "Requesting stake withdrawal...", false);
     try {
@@ -246,6 +288,7 @@ async function handleWithdrawStake() {
     } catch (error) {
         console.error("Error withdrawing stake:", error);
         updateStatusMessage(stakeStatus, `Network error withdrawing stake.`, true);
+        alert(`Withdraw stake error: ${error.message}`); // DEBUG ALERT
     }
 }
 
@@ -262,13 +305,17 @@ function startBXCAccrual(initialBalance, eventEndTimestamp, lastAccrualTime = nu
     let lastCalculatedTime = lastAccrualTime ? new Date(lastAccrualTime).getTime() : Date.now();
 
     // Initial calculation for any time elapsed since lastAccrualTime (e.g., page load)
-    const timeElapsedSinceLastAccrual = (Date.now() - lastCalculatedTime) / 1000; // in seconds
+    // Only accrue up to eventEndTime if now is past it.
+    const now = Date.now();
+    const effectiveAccrualEndTime = Math.min(now, eventEndTimeMs);
+    
+    const timeElapsedSinceLastAccrual = Math.max(0, (effectiveAccrualEndTime - lastCalculatedTime) / 1000); // in seconds
     currentBXC += timeElapsedSinceLastAccrual * BXC_ACCRUAL_PER_SECOND;
     bxcBalanceDisplay.textContent = `${currentBXC.toFixed(4)} BXC`; // Update immediately
 
     bxcAccrualInterval = setInterval(() => {
-        const now = Date.now();
-        if (now >= eventEndTimeMs) {
+        const currentSecondTime = Date.now();
+        if (currentSecondTime >= eventEndTimeMs) {
             clearInterval(bxcAccrualInterval);
             console.log("BXC accrual ended: Event time reached.");
             return;
@@ -278,16 +325,15 @@ function startBXCAccrual(initialBalance, eventEndTimestamp, lastAccrualTime = nu
         currentBXC += BXC_ACCRUAL_PER_SECOND;
         bxcBalanceDisplay.textContent = `${currentBXC.toFixed(4)} BXC`;
 
-        // In a real app, you'd periodically save currentBXC to backend to prevent loss on refresh
-        // For this frontend, it's simulated.
     }, 1000); // Update every second
 }
 
 async function handleWithdrawBXC() {
+    alert("Withdraw BXC button clicked."); // DEBUG ALERT
     if (!selectedAccount) return updateStatusMessage(bxcWithdrawStatus, "Wallet not connected.", true);
     updateStatusMessage(bxcWithdrawStatus, "Requesting BXC withdrawal...", false);
 
-    // Stop accrual temporarily if it's running, to prevent race conditions
+    // Stop accrual temporarily if it's running, to prevent race conditions during update
     if (bxcAccrualInterval) {
         clearInterval(bxcAccrualInterval);
     }
@@ -304,20 +350,21 @@ async function handleWithdrawBXC() {
             fetchStatus(selectedAccount); // Refresh UI, which will restart accrual if applicable
         } else {
             updateStatusMessage(bxcWithdrawStatus, `BXC withdrawal failed: ${data.message}`, true);
-            // If withdrawal failed, restart accrual (assuming data from fetchStatus will re-initiate it)
-            fetchStatus(selectedAccount);
+            alert(`BXC withdrawal failed: ${data.message}`); // DEBUG ALERT
+            fetchStatus(selectedAccount); // Refresh UI to get latest data and restart accrual if needed
         }
     } catch (error) {
         console.error("Error withdrawing BXC:", error);
         updateStatusMessage(bxcWithdrawStatus, `Network error withdrawing BXC.`, true);
-        // Restart accrual in case of network error
-        fetchStatus(selectedAccount);
+        alert(`Network error withdrawing BXC: ${error.message}`); // DEBUG ALERT
+        fetchStatus(selectedAccount); // Refresh UI in case of network error
     }
 }
 
 // --- Reward Flip Card & Partnered Coin Logic ---
 
 async function handleFlipReward() {
+    alert("Flip Reward button clicked."); // DEBUG ALERT
     if (!selectedAccount) return updateStatusMessage(rewardStatus, "Wallet not connected.", true);
     updateStatusMessage(rewardStatus, "Revealing your reward...", false);
 
@@ -330,47 +377,46 @@ async function handleFlipReward() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ walletAddress: selectedAccount })
         });
-        const data = await response.json(); // Expected: { rewardUSD: number, isLuckyWinner: boolean }
+        const data = await response.json(); // Expected: { AIN_Amount: number, isLuckyWinner: boolean }
 
         if (response.ok) {
             // Flip the card visually
             rewardFlipCard.classList.add('flipped');
 
             // Determine AIN amount or "try again" message
-            if (data.isLuckyWinner && data.rewardUSD > 0) {
-                const ainAmount = data.rewardUSD / AIN_USD_PRICE;
-                revealedRewardAmountDisplay.textContent = `${ainAmount.toFixed(4)} AIN`;
+            if (data.isLuckyWinner && data.AIN_Amount > 0) {
+                revealedRewardAmountDisplay.textContent = `${data.AIN_Amount.toFixed(4)} AIN`;
                 updateStatusMessage(rewardStatus, "Reward revealed! Click Collect.", false);
                 collectRewardBtn.disabled = false; // Enable collect button
             } else {
-                revealedRewardAmountDisplay.textContent = "Better luck next time!"; // Or "0 AIN"
+                revealedRewardAmountDisplay.textContent = "Better luck next time! (0 AIN)"; 
                 updateStatusMessage(rewardStatus, "No reward this event. Try again next time!", true);
                 collectRewardBtn.disabled = true; // Disable collect button
             }
-            // Store revealed amount temporarily for collection (or rely on backend)
-            // Here, we'll rely on fetchStatus to update UI after collection.
-
         } else {
             updateStatusMessage(rewardStatus, `Failed to reveal reward: ${data.message}`, true);
+            alert(`Reveal reward failed: ${data.message}`); // DEBUG ALERT
             flipRewardBtn.disabled = false; // Allow retrying if backend failed
         }
     } catch (error) {
         console.error("Error revealing reward:", error);
         updateStatusMessage(rewardStatus, `Network error revealing reward.`, true);
+        alert(`Network error revealing reward: ${error.message}`); // DEBUG ALERT
         flipRewardBtn.disabled = false;
     }
 }
 
 async function handleCollectReward() {
+    alert("Collect Reward button clicked."); // DEBUG ALERT
     if (!selectedAccount) return updateStatusMessage(partneredCoinStatus, "Wallet not connected.", true);
     updateStatusMessage(partneredCoinStatus, "Collecting your AIN reward...", false);
     collectRewardBtn.disabled = true; // Disable to prevent double-click
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/collect-reward`, { // Backend endpoint to claim revealed USD, now adapted for AIN
+        const response = await fetch(`${BACKEND_URL}/api/collect-reward`, { // Backend endpoint to claim revealed reward
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ walletAddress: selectedAccount }) // Backend uses lastRevealedUSDAmount
+            body: JSON.stringify({ walletAddress: selectedAccount })
         });
         const data = await response.json(); // Expected to confirm AIN added to balance
 
@@ -381,24 +427,27 @@ async function handleCollectReward() {
             flipRewardBtn.disabled = true; // Disable flip after collecting for this event
         } else {
             updateStatusMessage(partneredCoinStatus, `Failed to collect AIN: ${data.message}`, true);
+            alert(`Collect reward failed: ${data.message}`); // DEBUG ALERT
             collectRewardBtn.disabled = false; // Re-enable if collection failed
         }
     } catch (error) {
         console.error("Error collecting AIN:", error);
         updateStatusMessage(partneredCoinStatus, `Network error collecting AIN.`, true);
+        alert(`Network error collecting AIN: ${error.message}`); // DEBUG ALERT
         collectRewardBtn.disabled = false;
     }
 }
 
 async function handleWithdrawPartneredCoin() {
+    alert("Withdraw Partnered Coin button clicked."); // DEBUG ALERT
     if (!selectedAccount) return updateStatusMessage(partneredCoinStatus, "Wallet not connected.", true);
     updateStatusMessage(partneredCoinStatus, "Requesting AIN withdrawal...", false);
     
     // **IMPORTANT**: This endpoint assumes your backend will have a new endpoint for AIN withdrawal
     // or modifies the existing /api/withdraw to handle 'AIN'.
-    // Please coordinate with your backend developer.
+    // Your backend now has /api/withdrawAIN endpoint.
     try {
-        const response = await fetch(`${BACKEND_URL}/api/withdrawAIN`, { // Assuming new endpoint /api/withdrawAIN
+        const response = await fetch(`${BACKEND_URL}/api/withdrawAIN`, { // Using the NEW /api/withdrawAIN endpoint
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ walletAddress: selectedAccount })
@@ -409,10 +458,12 @@ async function handleWithdrawPartneredCoin() {
             fetchStatus(selectedAccount); // Refresh UI
         } else {
             updateStatusMessage(partneredCoinStatus, `AIN withdrawal failed: ${data.message}`, true);
+            alert(`AIN withdrawal failed: ${data.message}`); // DEBUG ALERT
         }
     } catch (error) {
         console.error("Error withdrawing AIN:", error);
         updateStatusMessage(partneredCoinStatus, `Network error withdrawing AIN.`, true);
+        alert(`Network error withdrawing AIN: ${error.message}`); // DEBUG ALERT
     }
 }
 
@@ -420,12 +471,14 @@ async function handleWithdrawPartneredCoin() {
 // --- Referral System Logic ---
 
 async function handleCopyReferralCode() {
+    alert("Copy Referral Code button clicked."); // DEBUG ALERT
     const referralCode = referralCodeDisplay.textContent;
     if (referralCode && referralCode !== '••••••' && referralCode !== 'Connect Wallet') {
         try {
             await navigator.clipboard.writeText(referralCode);
             updateStatusMessage(stakeStatus, "Referral code copied!", false); // Using stakeStatus for general short messages
-            // Optionally, send 50 BXC bonus to backend
+            
+            // Send 50 BXC bonus to backend
             await fetch(`${BACKEND_URL}/api/referral-copied`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -435,6 +488,7 @@ async function handleCopyReferralCode() {
         } catch (err) {
             console.error('Failed to copy referral code: ', err);
             updateStatusMessage(stakeStatus, "Failed to copy code.", true);
+            alert(`Failed to copy code: ${err.message}`); // DEBUG ALERT
         }
     } else {
         updateStatusMessage(stakeStatus, "No referral code available to copy.", true);
@@ -442,12 +496,14 @@ async function handleCopyReferralCode() {
 }
 
 async function handleCopyReferralLink() {
+    alert("Copy Referral Link button clicked."); // DEBUG ALERT
     const referralLink = referralLinkDisplay.textContent;
     if (referralLink && referralLink.includes(window.location.origin)) { // Ensure it's a valid link
         try {
             await navigator.clipboard.writeText(referralLink);
             updateStatusMessage(stakeStatus, "Referral link copied!", false); // Using stakeStatus for general short messages
-            // Optionally, send 50 BXC bonus to backend
+            
+            // Send 50 BXC bonus to backend
             await fetch(`${BACKEND_URL}/api/referral-copied`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -457,6 +513,7 @@ async function handleCopyReferralLink() {
         } catch (err) {
             console.error('Failed to copy referral link: ', err);
             updateStatusMessage(stakeStatus, "Failed to copy link.", true);
+            alert(`Failed to copy link: ${err.message}`); // DEBUG ALERT
         }
     } else {
         updateStatusMessage(stakeStatus, "No referral link available to copy.", true);
@@ -464,6 +521,7 @@ async function handleCopyReferralLink() {
 }
 
 async function handleShareReferralLink() {
+    alert("Share Referral Link button clicked."); // DEBUG ALERT
     const referralLink = referralLinkDisplay.textContent;
     if (navigator.share && referralLink && referralLink.includes(window.location.origin)) {
         try {
@@ -483,6 +541,7 @@ async function handleShareReferralLink() {
         } catch (error) {
             console.error('Error sharing:', error);
             updateStatusMessage(stakeStatus, "Failed to share link.", true);
+            alert(`Failed to share link: ${error.message}`); // DEBUG ALERT
         }
     } else {
         updateStatusMessage(stakeStatus, "Web Share API not supported or no link available.", true);
@@ -511,21 +570,24 @@ const connectWallet = async (walletName, provider) => {
         selectedAccount = accounts[0];
         console.log(`Connected with ${walletName}:`, selectedAccount);
         updateStatusMessage(walletStatus, `Connected: ${selectedAccount.substring(0, 6)}...${selectedAccount.substring(selectedAccount.length - 4)}`, false);
+        alert(`Wallet connected: Fetching status for ${selectedAccount.substring(0, 6)}...`); // DEBUG ALERT
 
         const chainSwitched = await switchToBSC();
         if (!chainSwitched) {
             updateStatusMessage(walletStatus, `Please switch to BNB Smart Chain (Chain ID 56) manually.`, true);
+            alert(`Please switch to BNB Smart Chain.`); // DEBUG ALERT
             return false;
         }
 
         walletModal.classList.add('hidden'); // Close modal on success
-        console.log("Wallet connected and on BSC. Fetching status...");
+        console.log("Wallet connected and on BSC. Fetching status..."); 
         fetchStatus(selectedAccount); // Fetch user status on successful connection
         return true;
 
     } catch (error) {
         console.error(`Error connecting to ${walletName}:`, error);
         updateStatusMessage(walletStatus, `Connection failed for ${walletName}. ${error.message}`, true);
+        alert(`Connection failed to ${walletName}: ${error.message}`); // DEBUG ALERT
         return false;
     }
 };
@@ -570,10 +632,12 @@ const switchToBSC = async () => {
                 return true;
             } catch (addError) {
                 console.error("Failed to add BSC network:", addError);
+                alert(`Failed to add BSC network: ${addError.message}`); // DEBUG ALERT
                 return false;
             }
         } else {
             console.error("Failed to switch to BSC:", switchError);
+            alert(`Failed to switch chain: ${switchError.message}`); // DEBUG ALERT
             return false;
         }
     }
@@ -609,9 +673,9 @@ walletOptions.forEach(button => {
                 }
                 break;
             case 'bitget':
-                if (window.bitkeep && window.bitkeep.ethereum) { // BitKeep specific check
+                if (window.bitkeep && window.bitkeep.ethereum) {
                     provider = window.bitkeep.ethereum;
-                } else if (window.ethereum && window.ethereum.isBitKeep) { // Some Bitkeep versions might set this
+                } else if (window.ethereum && window.ethereum.isBitKeep) {
                      provider = window.ethereum;
                 }
                 break;
@@ -634,6 +698,7 @@ walletOptions.forEach(button => {
             await connectWallet(walletType, provider);
         } else {
             updateStatusMessage(walletStatus, `${walletType.charAt(0).toUpperCase() + walletType.slice(1)} is not detected. Please install it.`, true);
+            alert(`${walletType} wallet not detected.`); // DEBUG ALERT
         }
     });
 });
@@ -641,13 +706,13 @@ walletOptions.forEach(button => {
 // Listen for account/chain changes
 if (window.ethereum) {
     window.ethereum.on('accountsChanged', (accounts) => {
+        alert("Accounts changed event."); // DEBUG ALERT
         if (accounts.length === 0) {
             console.log('Wallet disconnected.');
             selectedAccount = null;
-            // Optionally, clear UI or show connect wallet state
             updateDashboardUI({}); // Clear dashboard
             if (bxcAccrualInterval) clearInterval(bxcAccrualInterval); // Stop accrual
-            alert('Wallet disconnected! Please connect again.');
+            alert('Wallet disconnected!');
         } else {
             selectedAccount = accounts[0];
             console.log('Account changed to:', selectedAccount);
@@ -656,10 +721,11 @@ if (window.ethereum) {
     });
 
     window.ethereum.on('chainChanged', (chainId) => {
+        alert("Chain changed event."); // DEBUG ALERT
         console.log('Chain changed to:', chainId);
         if (web3.utils.toHex(chainId) !== BSC_CHAIN_ID) {
             updateStatusMessage(stakeStatus, `Please switch to BNB Smart Chain (Chain ID 56). Current: ${chainId}`, true);
-            // Optionally, disable dApp functionalities
+            alert(`Wrong chain: Please switch to BSC.`); // DEBUG ALERT
             if (bxcAccrualInterval) clearInterval(bxcAccrualInterval); // Stop accrual if wrong chain
         } else {
             updateStatusMessage(stakeStatus, `Successfully switched to BSC.`, false);
@@ -684,14 +750,18 @@ shareReferralLinkBtn.addEventListener('click', handleShareReferralLink);
 
 // --- Initial Load ---
 document.addEventListener('DOMContentLoaded', () => {
+    alert("DOMContentLoaded fired."); // DEBUG ALERT
     // Attempt to auto-connect or fetch status if wallet is already connected (e.g., on refresh)
     if (window.ethereum && window.ethereum.selectedAddress) {
         selectedAccount = window.ethereum.selectedAddress;
         initializeWeb3(window.ethereum).then(() => {
             fetchStatus(selectedAccount);
+        }).catch(err => {
+            alert(`Auto-connect init error: ${err.message}`); // DEBUG ALERT
+            console.error("Auto-connect initialization failed:", err);
         });
     } else {
         // Fetch global status if no wallet is connected
-        fetchStatus();
+        fetchStatus(); // Pass null to fetch global status only
     }
 });
