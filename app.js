@@ -22,7 +22,7 @@ let mainEventTimerInterval = null; // Global for the main dApp timer
 const BACKEND_URL = 'https://bxc-backend-1dkpqw.fly.dev'; // EXAMPLE: Replace with your actual deployed backend URL
 
 // --- DOM Element References ---
-const connectWalletBtn = document.getElementById('connectWalletBtn');
+const connectWalletBtn = document.getElementById('connectWalletBtn'); // The header button
 const walletModal = document.getElementById('walletModal');
 const closeModalBtn = document.getElementById('closeModalBtn');
 const walletOptions = document.querySelectorAll('.wallet-option');
@@ -132,6 +132,13 @@ function updateDashboardUI(data) {
     
     // Update User-Specific Info if connected
     if (data.user) {
+        // Update Connect Wallet Button text
+        connectWalletBtn.textContent = `${data.user.walletAddress.substring(0, 6)}...${data.user.walletAddress.substring(data.user.walletAddress.length - 4)}`;
+        // Optionally change button styling to indicate connected status
+        connectWalletBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'text-white'); // Example connected styling
+        connectWalletBtn.classList.remove('bg-white', 'hover:bg-gray-100', 'text-cyan-700'); // Remove initial styling
+
+
         currentStakeValueDisplay.textContent = `$${(data.user.stakedUSDValue || 0).toFixed(2)}`;
         bxcBalanceDisplay.textContent = `${(data.user.BXC_Balance || 0).toFixed(4)} BXC`;
         partneredCoinEarnedDisplay.textContent = `${(data.user.AIN_Balance || 0).toFixed(4)} AIN`;
@@ -142,7 +149,7 @@ function updateDashboardUI(data) {
 
         // Handle button states based on user data and global paused states
         const isEventPaused = data.global.isPaused || false;
-        const withdrawalsGloballyPaused = data.global.withdrawalsPaused || false; // NEW: Read global withdrawals paused status
+        const withdrawalsGloballyPaused = data.global.withdrawalsPaused || false; 
 
         stakeBtn.disabled = data.user.slotsStaked > 0 || isEventPaused; // Disable stake if already staked OR event paused
         
@@ -171,7 +178,11 @@ function updateDashboardUI(data) {
         }
 
     } else {
-        // If no user connected, reset user-specific UI
+        // If no user connected, reset user-specific UI and connect button
+        connectWalletBtn.textContent = 'Connect Wallet';
+        connectWalletBtn.classList.add('bg-white', 'hover:bg-gray-100', 'text-cyan-700');
+        connectWalletBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'text-white');
+
         currentStakeValueDisplay.textContent = `$0.00`;
         bxcBalanceDisplay.textContent = `0.0000 BXC`;
         partneredCoinEarnedDisplay.textContent = `0.0000 AIN`;
@@ -183,11 +194,11 @@ function updateDashboardUI(data) {
         const withdrawalsGloballyPaused = data.global.withdrawalsPaused || false;
         
         stakeBtn.disabled = isEventPaused; // Can't stake if paused
-        withdrawStakeBtn.disabled = true || isEventPaused || withdrawalsGloballyPaused; // Also disable if paused
-        withdrawBxcBtn.disabled = true || isEventPaused || withdrawalsGloballyPaused;
+        withdrawStakeBtn.disabled = true;
+        withdrawBxcBtn.disabled = true;
         flipRewardBtn.disabled = true;
         collectRewardBtn.disabled = true;
-        withdrawPartneredCoinBtn.disabled = true || isEventPaused || withdrawalsGloballyPaused;
+        withdrawPartneredCoinBtn.disabled = true;
 
         if (bxcAccrualInterval) clearInterval(bxcAccrualInterval); // Stop accrual if no user
     }
