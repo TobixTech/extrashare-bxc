@@ -17,7 +17,7 @@ let eventEndTime = null; // Will store the timestamp when the event ends
 let bxcAccrualInterval = null; // To hold the interval for BXC accrual
 
 // Backend URL (placeholder - UPDATE THIS WITH YOUR DEPLOYED BACKEND URL)
-const BACKEND_URL = 'http://localhost:3000'; 
+const BACKEND_URL = 'https://bxc-backend-1dkpqw.fly.dev/'; 
 
 // --- DOM Element References ---
 const connectWalletBtn = document.getElementById('connectWalletBtn');
