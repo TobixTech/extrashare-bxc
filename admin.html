@@ -104,6 +104,7 @@
             padding: 0.75rem;
             text-align: left;
             border-bottom: 1px solid rgba(0,0,0,0.1);
+            white-space: nowrap; /* Prevent wrapping in table cells */
         }
         .admin-table th {
             background-color: rgba(0,0,0,0.05);
@@ -117,16 +118,20 @@
             font-size: 0.9rem;
             color: #374151;
         }
+        .admin-table-address {
+            font-family: 'monospace';
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body class="text-black font-sans min-h-screen flex flex-col">
 
     <header class="w-full bg-gradient-to-r from-cyan-600 to-blue-700 py-4 px-6 md:px-12 flex flex-col sm:flex-row justify-between items-center z-10 relative shadow-lg">
         <div class="flex items-center space-x-3 mb-2 sm:mb-0">
-            <img src="https://i.ibb.co/qYQjggPJ/20250721-150657.png" alt="Logo" class="h-10 w-10">
+            <img src="https://xtrashare-bxc.vercel.app/logo.png" alt="Logo" class="h-10 w-10">
             <h1 class="text-3xl font-bold text-white">XtraShare BXC Admin</h1>
         </div>
-        <button id="connectWalletBtn" class="bg-white hover:bg-gray-100 text-cyan-700 font-semibold py-2 px-6 rounded-full interactive-button">
+        <button id="connectWalletBtn" class="bg-white hover:bg-gray-100 text-cyan-700 font-semibold py-2 px-6 rounded-full interactive-button">\
             Connect Admin Wallet
         </button>
     </header>
@@ -141,13 +146,18 @@
                     <p class="text-xl text-highlight-green font-bold">Access Granted!</p>
                     <p class="text-gray-700">Connected as: <span id="connectedAdminWallet" class="font-mono text-highlight-black"></span></p>
 
+                    <div class="glass-card p-4 flex flex-col items-center">
+                        <p class="text-lg text-gray-700 mb-2">Total Connected Wallets:</p>
+                        <p id="totalConnectedWalletsDisplay" class="text-3xl font-extrabold text-highlight-cyan">0</p>
+                    </div>
+
                     <h3 class="text-xl font-semibold gradient-accent-text bg-clip-text text-transparent mt-8">Event Control</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div class="glass-card p-4 flex flex-col items-center">
                             <p class="text-lg text-gray-700 mb-2">Current Event Status:</p>
                             <p id="adminEventTimer" class="text-3xl font-extrabold text-highlight-cyan">00:00:00:00</p>
                             <p class="text-sm text-gray-600" id="eventTimerLabel">Ends In</p>
-                            <button id="togglePauseBtn" class="w-full gradient-button-primary hover:opacity-90 text-white font-bold py-3 px-6 rounded-full interactive-button mt-4">
+                            <button id="togglePauseBtn" class="w-full gradient-button-primary hover:opacity-90 text-white font-bold py-3 px-6 rounded-full interactive-button mt-4">\
                                 Toggle Event Pause
                             </button>
                             <p class="mt-2 text-center text-sm text-red-500" id="togglePauseStatus"></p>
@@ -157,37 +167,108 @@
                             <p class="text-lg text-gray-700 mb-2">Set New Event Duration:</p>
                             <div class="flex items-center space-x-2 mb-4">
                                 <input type="number" id="newEventDurationInput" class="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-gray-800" placeholder="Hours (e.g., 95)">
-                                <button id="setEventTimeBtn" class="gradient-button-primary hover:opacity-90 text-white font-bold py-2 px-4 rounded-md interactive-button">
+                                <button id="setEventDurationBtn" class="gradient-button-primary hover:opacity-90 text-white font-bold py-2 px-4 rounded-md interactive-button">\
                                     Set
                                 </button>
                             </div>
-                            <p class="mt-2 text-center text-sm text-red-500" id="setEventTimeStatus"></p>
-                            <p class="text-gray-600 text-sm mt-2">Setting a new duration will reset total participants to 0.</p>
+                            <p class="mt-2 text-center text-sm text-red-500" id="setEventDurationStatus"></p>
+                            <p class="text-gray-600 text-sm mt-2">Setting a new duration will reset total participants to 0 and start a new cycle.</p>
+                        </div>
+
+                        <div class="glass-card p-4 flex flex-col">
+                            <p class="text-lg text-gray-700 mb-2">Set Max Stake Slots:</p>
+                            <div class="flex items-center space-x-2 mb-4">
+                                <input type="number" id="newMaxSlotsInput" class="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-gray-800" placeholder="e.g., 30000">
+                                <button id="setMaxSlotsBtn" class="gradient-button-primary hover:opacity-90 text-white font-bold py-2 px-4 rounded-md interactive-button">\
+                                    Set
+                                </button>
+                            </div>
+                            <p class="mt-2 text-center text-sm text-red-500" id="setMaxSlotsStatus"></p>
+                            <p class="text-gray-600 text-sm mt-2">Current Max Slots: <span id="currentMaxSlotsDisplay" class="font-bold"></span></p>
                         </div>
                     </div>
+
+                    <h3 class="text-xl font-semibold gradient-accent-text bg-clip-text text-transparent mt-8">Staking & Rewards Control</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="glass-card p-4 flex flex-col">
+                            <p class="text-lg text-gray-700 mb-2">Set Staking Wallet Address:</p>
+                            <input type="text" id="newStakingWalletAddressInput" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-gray-800 mb-2" placeholder="0x...">
+                            <button id="setStakingWalletBtn" class="w-full gradient-button-primary hover:opacity-90 text-white font-bold py-2 px-4 rounded-full interactive-button">\
+                                Set Address
+                            </button>
+                            <p class="mt-2 text-center text-sm text-red-500" id="setStakingWalletStatus"></p>
+                            <p class="text-gray-600 text-sm mt-2">Current Staking Address: <span id="currentStakingWalletDisplay" class="font-mono text-xs"></span></p>
+                        </div>
+
+                        <div class="glass-card p-4 flex flex-col">
+                            <p class="text-lg text-gray-700 mb-2">Set Initial Stake Amount (USD):</p>
+                            <div class="flex items-center space-x-2 mb-4">
+                                <input type="number" step="0.01" id="newStakeAmountInput" class="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-gray-800" placeholder="e.g., 8.00">
+                                <button id="setStakeAmountBtn" class="gradient-button-primary hover:opacity-90 text-white font-bold py-2 px-4 rounded-md interactive-button">\
+                                    Set
+                                </button>
+                            </div>
+                            <p class="mt-2 text-center text-sm text-red-500" id="setStakeAmountStatus"></p>
+                            <p class="text-gray-600 text-sm mt-2">Current Stake Amount: $<span id="currentStakeAmountDisplay" class="font-bold"></span></p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="glass-card p-4 flex flex-col">
+                            <p class="text-lg text-gray-700 mb-2">Set Max AIN Reward Pool (AIN):</p>
+                            <div class="flex items-center space-x-2 mb-4">
+                                <input type="number" step="any" id="maxAinRewardPoolInput" class="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-gray-800" placeholder="e.g., 50000">
+                                <button id="setMaxAinRewardPoolBtn" class="gradient-button-primary hover:opacity-90 text-white font-bold py-2 px-4 rounded-md interactive-button">\
+                                    Set
+                                </button>
+                            </div>
+                            <p class="mt-2 text-center text-sm text-red-500" id="setMaxAinRewardPoolStatus"></p>
+                            <p class="text-gray-600 text-sm mt-2">Current Max AIN Pool: <span id="currentMaxAinRewardPoolDisplay" class="font-bold"></span> AIN</p>
+                            <p class="text-gray-600 text-sm mt-1">Total AIN Rewarded This Cycle: <span id="totalAinRewardedDisplay" class="font-bold"></span> AIN</p>
+                        </div>
+
+                        <div class="glass-card p-4 flex flex-col">
+                            <p class="text-lg text-gray-700 mb-2">Fund User Balance:</p>
+                            <input type="text" id="fundUserWalletInput" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-gray-800 mb-2" placeholder="User's Wallet Address (0x...)">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <input type="number" step="any" id="fundAmountInput" class="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-gray-800" placeholder="Amount">
+                                <select id="fundTokenTypeSelect" class="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-gray-800">
+                                    <option value="BXC">BXC</option>
+                                    <option value="AIN">AIN</option>
+                                </select>
+                            </div>
+                            <button id="fundUserBtn" class="w-full gradient-button-primary hover:opacity-90 text-white font-bold py-2 px-4 rounded-full interactive-button">\
+                                Fund User
+                            </button>
+                            <p class="mt-2 text-center text-sm text-red-500" id="fundUserStatus"></p>
+                        </div>
+                    </div>
+
 
                     <h3 class="text-xl font-semibold gradient-accent-text bg-clip-text text-transparent mt-8">Withdrawal Control</h3>
                     <div class="glass-card p-4 flex flex-col items-center">
                         <p class="text-lg text-gray-700 mb-2">Global Withdrawals Status: <span id="withdrawalsStatusDisplay" class="font-bold text-highlight-green">Active</span></p>
-                        <button id="toggleWithdrawalsPauseBtn" class="w-full gradient-button-black hover:opacity-90 text-white font-bold py-3 px-6 rounded-full interactive-button mt-4">
+                        <button id="toggleWithdrawalsPauseBtn" class="w-full gradient-button-black hover:opacity-90 text-white font-bold py-3 px-6 rounded-full interactive-button mt-4">\
                             Toggle All Withdrawals Pause
                         </button>
                         <p class="mt-2 text-center text-sm text-red-500" id="toggleWithdrawalsStatus"></p>
                     </div>
 
-                    <h3 class="text-xl font-semibold gradient-accent-text bg-clip-text text-transparent mt-8">Users Leaderboard</h3>
+                    <h3 class="text-xl font-semibold gradient-accent-text bg-clip-text text-transparent mt-8">Users Leaderboard / Details</h3>
                     <div class="glass-card p-4">
-                        <div class="flex items-center space-x-4 mb-4">
+                        <div class="flex flex-wrap items-center gap-4 mb-4">
                             <p class="text-gray-700">Sort by:</p>
                             <select id="leaderboardSortBy" class="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-gray-800">
                                 <option value="referralCount">Total Referred</option>
                                 <option value="BXC_Balance">BXC Balance</option>
                                 <option value="AIN_Balance">AIN Balance</option>
                                 <option value="stakedUSDValue">Staked USD Value</option>
+                                <option value="createdAt">Newest Users</option>
                             </select>
-                            <button id="refreshLeaderboardBtn" class="gradient-button-primary hover:opacity-90 text-white font-bold py-2 px-4 rounded-md interactive-button">
+                            <button id="refreshLeaderboardBtn" class="gradient-button-primary hover:opacity-90 text-white font-bold py-2 px-4 rounded-md interactive-button">\
                                 Refresh
                             </button>
+                            <span class="text-gray-600 text-sm ml-auto">Total Users: <span id="totalUsersCountDisplay" class="font-bold">0</span></span>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="admin-table">
@@ -198,10 +279,11 @@
                                         <th>BXC</th>
                                         <th>AIN</th>
                                         <th>Staked USD</th>
+                                        <th>Joined</th>
                                     </tr>
                                 </thead>
                                 <tbody id="leaderboardTableBody">
-                                    <tr><td colspan="5" class="text-center text-gray-500">No users to display or fetching...</td></tr>
+                                    <tr><td colspan="6" class="text-center text-gray-500">No users to display or fetching...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -213,24 +295,24 @@
     </main>
 
     <div id="walletModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
-        <div class="glass-card p-8 rounded-lg shadow-xl w-full max-w-md mx-4 relative">
+        <div class="glass-card p-8 rounded-lg shadow-xl w-full max-w-md mx-4 relative">\
             <button id="closeModalBtn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             <h2 class="text-3xl font-bold mb-6 text-center gradient-accent-text bg-clip-text text-transparent">Connect Admin Wallet</h2>
 
             <div class="space-y-4">
-                <button class="wallet-option w-full p-4 flex items-center justify-between glass-card rounded-lg transition duration-200 ease-in-out hover:bg-gray-100" data-wallet="metamask">
+                <button class="wallet-option w-full p-4 flex items-center justify-between glass-card rounded-lg transition duration-200 ease-in-out hover:bg-gray-100" data-wallet="metamask">\
                     <span class="font-semibold text-lg text-gray-800">MetaMask</span>
                     <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" class="w-8 h-8">
                 </button>
-                <button class="wallet-option w-full p-4 flex items-center justify-between glass-card rounded-lg transition duration-200 ease-in-out hover:bg-gray-100" data-wallet="bitget">
+                <button class="wallet-option w-full p-4 flex items-center justify-between glass-card rounded-lg transition duration-200 ease-in-out hover:bg-gray-100" data-wallet="bitget">\
                     <span class="font-semibold text-lg text-gray-800">BitGet Wallet</span>
                     <img src="https://bitget.com/assets/images/logo/bitget_logo_white.svg" alt="BitGet" class="w-8 h-8 filter invert">
                 </button>
-                <button class="wallet-option w-full p-4 flex items-center justify-between glass-card rounded-lg transition duration-200 ease-in-out hover:bg-gray-100" data-wallet="okx">
+                <button class="wallet-option w-full p-4 flex items-center justify-between glass-card rounded-lg transition duration-200 ease-in-out hover:bg-gray-100" data-wallet="okx">\
                     <span class="font-semibold text-lg text-gray-800">OKX Wallet</span>
                     <img src="https://www.okx.com/cdn/assets/imgs/220/266A451296537659.png" alt="OKX" class="w-8 h-8 filter invert">
                 </button>
-                <button class="wallet-option w-full p-4 flex items-center justify-between glass-card rounded-lg transition duration-200 ease-in-out hover:bg-gray-100" data-wallet="trust">
+                <button class="wallet-option w-full p-4 flex items-center justify-between glass-card rounded-lg transition duration-200 ease-in-out hover:bg-gray-100" data-wallet="trust">\
                     <span class="font-semibold text-lg text-gray-800">Trust Wallet</span>
                     <img src="https://trustwallet.com/assets/images/media/assets/TWT.png" alt="Trust Wallet" class="w-8 h-8">
                 </button>
