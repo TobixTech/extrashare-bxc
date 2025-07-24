@@ -147,13 +147,90 @@
             box-shadow: 0 15px 35px 0 rgba(0, 0, 0, 0.25);
             transform: rotateY(180deg);
         }
+
+        /* NEW: Styles for the "Gift Box" Partnered Coin Section */
+        .reward-gift-box {
+            border: 4px solid #06B6D4; /* Cyan border */
+            border-radius: 18px;
+            padding: 1.5rem;
+            background-color: transparent; /* Outer transparent */
+            box-shadow: 0 15px 35px rgba(0,0,0,0.25); /* Stronger shadow for the whole box */
+            transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .reward-gift-box:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+        }
+        .reward-inner-card {
+            background-color: #1F2937; /* Dark inner background */
+            border-radius: 12px;
+            padding: 1.5rem;
+            color: white; /* White text for dark background */
+            text-align: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5); /* Inner subtle shadow */
+            position: relative; /* For the gradient effect */
+            overflow: hidden; /* For clipping inner content */
+        }
+        .reward-inner-card::before { /* Subtle gradient overlay */
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom right, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.1));
+            pointer-events: none;
+            border-radius: 12px;
+        }
+        .reward-icon-circle {
+            background-color: #06B6D4; /* Cyan background for icon circle */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+        .reward-icon-circle img {
+            width: 40px; /* Adjust size of the token icon */
+            height: 40px;
+        }
+        .luckier-badge {
+            background: linear-gradient(to right, #06B6D4, #22D3EE); /* Cyan gradient */
+            color: white;
+            border-radius: 9999px; /* Pill shape */
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .redeem-button {
+            background-image: linear-gradient(to right, #06B6D4, #0891B2); /* Cyan gradient */
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+            transition: all 0.2s ease-in-out;
+        }
+        .redeem-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.35);
+        }
+        .redeem-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
     </style>
 </head>
 <body class="text-black font-sans min-h-screen flex flex-col">
 
     <header class="w-full bg-gradient-to-r from-cyan-600 to-blue-700 py-4 px-6 md:px-12 flex flex-col sm:flex-row justify-between items-center z-10 relative shadow-lg">
         <div class="flex items-center space-x-3 mb-2 sm:mb-0">
-            <img src="https://i.ibb.co/qYQjggPJ/20250721-150657.png" alt="Logo" class="h-10 w-10">
+            <img src="https://xtrashare-bxc.vercel.app/logo.png" alt="Logo" class="h-10 w-10">
             <h1 class="text-3xl font-bold text-white">XtraShare BXC</h1>
         </div>
         <button id="connectWalletBtn" class="bg-white hover:bg-gray-100 text-cyan-700 font-semibold py-2 px-6 rounded-full interactive-button">
@@ -179,7 +256,8 @@
                         <p class="text-lg text-gray-700">Current Staked Value: <span id="currentStakeValue" class="font-bold text-highlight-green">$0.00</span></p>
                     </div>
 
-                    <div class="mb-6 border-t border-gray-200 pt-6 mt-6"> <div class="flex justify-between items-baseline text-lg font-medium text-gray-700 mb-2">
+                    <div class="mb-6 border-t border-gray-200 pt-6 mt-6">
+                        <div class="flex justify-between items-baseline text-lg font-medium text-gray-700 mb-2">
                             <span>Participants: <span id="participantsCount">0/30,000</span></span>
                             <span id="participantsPercentage">0%</span>
                         </div>
@@ -245,14 +323,17 @@
                     </div>
                 </div>
 
-                <div class="glass-card p-6 interactive-glass-card">
-                    <h2 class="text-2xl font-bold mb-4 gradient-accent-text bg-clip-text text-transparent">Partnered Coin Rewards</h2>
-                    <div class="flex flex-col items-center justify-center gap-4 mb-6">
-                        <p class="text-lg text-gray-700">Total Earned:</p>
-                        <p id="partneredCoinEarned" class="text-4xl font-extrabold text-highlight-cyan">$0.00 USD</p>
-                    </div>
-                    <button id="withdrawPartneredCoinBtn" class="w-full gradient-button-black hover:opacity-90 text-white font-bold py-3 px-6 rounded-full interactive-button">
-                        Withdraw Partnered Coin
+                <div class="reward-gift-box interactive-glass-card">
+                    <h2 id="partneredCoinHeader" class="text-2xl font-bold mb-4 text-center gradient-accent-text bg-clip-text text-transparent">Partnered Coin Rewards</h2>
+                    <div class="reward-inner-card">
+                        <div class="reward-icon-circle">
+                            <img src="https://xtrashare-bxc.vercel.app/logo.png" alt="AIN Icon"> </div>
+                        <p id="partneredCoinEarned" class="text-4xl font-extrabold text-white mb-2">0 AIN</p>
+                        <p id="rewardClaimBefore" class="text-gray-300 text-sm mb-2">Claim before 2025-07-31 15:00:00</p> <span id="luckierBadge" class="luckier-badge hidden">Luckier than 88% of users</span>
+
+                        <p id="partneredCoinMessage" class="text-gray-300 text-sm mt-4 hidden">Click to view result</p> </div>
+                    <button id="withdrawPartneredCoinBtn" class="w-full redeem-button mt-6 interactive-button">
+                        Redeem Tokens
                     </button>
                     <p id="partneredCoinStatus" class="mt-4 text-center text-sm text-red-500 hidden"></p>
                 </div>
