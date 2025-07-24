@@ -12,8 +12,8 @@ const BSC_CHAIN_ID = '0x38'; // Chain ID for BNB Smart Chain (56 in decimal)
 let web3; // Will hold the Web3 instance
 let selectedAdminAccount = null;
 
-// Backend URL (Crucial: ENSURE THIS EXACTLY MATCHES YOUR DEPLOYED BACKEND URL)
-const BACKEND_URL = 'https://bxc-backend-1dkpqw.fly.dev'; // EXAMPLE: Replace with your actual deployed backend URL
+// Backend URL (Crucial: YOU MUST REPLACE THIS WITH YOUR ACTUAL DEPLOYED BACKEND URL)
+const BACKEND_URL = 'https://YOUR-ACTUAL-BACKEND-APP-NAME.fly.dev'; // <<<--- IMPORTANT: REPLACE THIS LINE
 
 // --- DOM Element References ---
 const connectWalletBtn = document.getElementById('connectWalletBtn');
@@ -28,7 +28,7 @@ const adminMessage = document.getElementById('adminMessage');
 const adminControls = document.getElementById('adminControls');
 const connectedAdminWalletDisplay = document.getElementById('connectedAdminWallet');
 
-// New: Total Connected Wallets Display (Feature 1)
+// Feature 1: Total Connected Wallets Display
 const totalConnectedWalletsDisplay = document.getElementById('totalConnectedWalletsDisplay');
 
 const adminEventTimerDisplay = document.getElementById('adminEventTimer');
@@ -41,35 +41,35 @@ const togglePauseBtn = document.getElementById('togglePauseBtn');
 const togglePauseStatus = document.getElementById('togglePauseStatus'); 
 
 const newEventDurationInput = document.getElementById('newEventDurationInput');
-const setEventDurationBtn = document.getElementById('setEventDurationBtn'); // Renamed ID
-const setEventDurationStatus = document.getElementById('setEventDurationStatus'); // Renamed ID
+const setEventDurationBtn = document.getElementById('setEventDurationBtn'); 
+const setEventDurationStatus = document.getElementById('setEventDurationStatus'); 
 
-const newMaxSlotsInput = document.getElementById('newMaxSlotsInput'); // Feature 6
-const setMaxSlotsBtn = document.getElementById('setMaxSlotsBtn');     // Feature 6
-const setMaxSlotsStatus = document.getElementById('setMaxSlotsStatus'); // Feature 6
-const currentMaxSlotsDisplay = document.getElementById('currentMaxSlotsDisplay'); // Feature 6
+const newMaxSlotsInput = document.getElementById('newMaxSlotsInput'); 
+const setMaxSlotsBtn = document.getElementById('setMaxSlotsBtn');     
+const setMaxSlotsStatus = document.getElementById('setMaxSlotsStatus'); 
+const currentMaxSlotsDisplay = document.getElementById('currentMaxSlotsDisplay'); 
 
-const newStakingWalletAddressInput = document.getElementById('newStakingWalletAddressInput'); // Feature 2
-const setStakingWalletBtn = document.getElementById('setStakingWalletBtn');                 // Feature 2
-const setStakingWalletStatus = document.getElementById('setStakingWalletStatus');           // Feature 2
-const currentStakingWalletDisplay = document.getElementById('currentStakingWalletDisplay'); // Feature 2
+const newStakingWalletAddressInput = document.getElementById('newStakingWalletAddressInput'); 
+const setStakingWalletBtn = document.getElementById('setStakingWalletBtn');                 
+const setStakingWalletStatus = document.getElementById('setStakingWalletStatus');           
+const currentStakingWalletDisplay = document.getElementById('currentStakingWalletDisplay'); 
 
-const newStakeAmountInput = document.getElementById('newStakeAmountInput'); // Feature 5
-const setStakeAmountBtn = document.getElementById('setStakeAmountBtn');     // Feature 5
-const setStakeAmountStatus = document.getElementById('setStakeAmountStatus'); // Feature 5
-const currentStakeAmountDisplay = document.getElementById('currentStakeAmountDisplay'); // Feature 5
+const newStakeAmountInput = document.getElementById('newStakeAmountInput'); 
+const setStakeAmountBtn = document.getElementById('setStakeAmountBtn');     
+const setStakeAmountStatus = document.getElementById('setStakeAmountStatus'); 
+const currentStakeAmountDisplay = document.getElementById('currentStakeAmountDisplay'); 
 
-const maxAinRewardPoolInput = document.getElementById('maxAinRewardPoolInput'); // Feature 3
-const setMaxAinRewardPoolBtn = document.getElementById('setMaxAinRewardPoolBtn'); // Feature 3
-const setMaxAinRewardPoolStatus = document.getElementById('setMaxAinRewardPoolStatus'); // Feature 3
-const currentMaxAinRewardPoolDisplay = document.getElementById('currentMaxAinRewardPoolDisplay'); // Feature 3
-const totalAinRewardedDisplay = document.getElementById('totalAinRewardedDisplay'); // Feature 3
+const maxAinRewardPoolInput = document.getElementById('maxAinRewardPoolInput'); 
+const setMaxAinRewardPoolBtn = document.getElementById('setMaxAinRewardPoolBtn'); 
+const setMaxAinRewardPoolStatus = document.getElementById('setMaxAinRewardPoolStatus'); 
+const currentMaxAinRewardPoolDisplay = document.getElementById('currentMaxAinRewardPoolDisplay'); 
+const totalAinRewardedDisplay = document.getElementById('totalAinRewardedDisplay'); 
 
-const fundUserWalletInput = document.getElementById('fundUserWalletInput'); // Feature 7
-const fundAmountInput = document.getElementById('fundAmountInput');         // Feature 7
-const fundTokenTypeSelect = document.getElementById('fundTokenTypeSelect'); // Feature 7
-const fundUserBtn = document.getElementById('fundUserBtn');                 // Feature 7
-const fundUserStatus = document.getElementById('fundUserStatus');           // Feature 7
+const fundUserWalletInput = document.getElementById('fundUserWalletInput'); 
+const fundAmountInput = document.getElementById('fundAmountInput');         
+const fundTokenTypeSelect = document.getElementById('fundTokenTypeSelect'); 
+const fundUserBtn = document.getElementById('fundUserBtn');                 
+const fundUserStatus = document.getElementById('fundUserStatus');           
 
 const withdrawalsStatusDisplay = document.getElementById('withdrawalsStatusDisplay');
 const toggleWithdrawalsPauseBtn = document.getElementById('toggleWithdrawalsPauseBtn');
@@ -79,7 +79,7 @@ const leaderboardSortBy = document.getElementById('leaderboardSortBy');
 const refreshLeaderboardBtn = document.getElementById('refreshLeaderboardBtn');
 const leaderboardTableBody = document.getElementById('leaderboardTableBody');
 const leaderboardStatus = document.getElementById('leaderboardStatus');
-const totalUsersCountDisplay = document.getElementById('totalUsersCountDisplay'); // Feature 4
+const totalUsersCountDisplay = document.getElementById('totalUsersCountDisplay'); 
 
 // --- Utility Functions ---
 function updateStatusMessage(element, message, isError = false) {
@@ -118,12 +118,12 @@ function startAdminEventTimer(endTimeTimestamp, isPaused, eventStartTime) {
         return;
     }
 
-    // If event hasn't genuinely started yet (e.g. before first stake if logic dictates)
+    // If event hasn't genuinely started yet 
     if (nowMs < eventStartTimeMs) {
         adminEventTimerDisplay.textContent = "NOT STARTED";
         eventTimerLabel.textContent = "Event Status";
-        togglePauseBtn.textContent = "Event Not Started"; // Or change to 'Start Event' if direct start is desired
-        togglePauseBtn.disabled = true; // Can't pause if not started
+        togglePauseBtn.textContent = "Event Not Started"; 
+        togglePauseBtn.disabled = true; 
         return;
     }
 
@@ -194,7 +194,7 @@ async function fetchAdminDashboardData() {
             // Feature 1: Update Total Connected Wallets
             totalConnectedWalletsDisplay.textContent = globalData.totalConnectedWallets || 0;
 
-            const participantsTotalSlots = globalData.maxStakeSlots || 30000; // Use dynamic max slots
+            const participantsTotalSlots = globalData.maxStakeSlots || 30000; 
             const stakedSlots = globalData.totalSlotsUsed || 0;
             const percentage = (stakedSlots / participantsTotalSlots) * 100;
 
@@ -237,12 +237,14 @@ async function fetchAdminDashboardData() {
             fetchUsersLeaderboard(leaderboardSortBy.value); // Fetch leaderboard on dashboard load
             return data;
         } else {
-            updateStatusMessage(adminMessage, `Failed to load dashboard data: ${data.message}`, true);
+            // This 'else' block implies a response was received but it was not 'ok' (e.g., status 500)
+            updateStatusMessage(adminMessage, `Failed to load dashboard data: ${data.message || 'Unknown error'}`, true);
             return null;
         }
     } catch (error) {
+        // This 'catch' block handles actual network errors (e.g., backend URL is wrong, server is down)
         console.error("Error fetching admin dashboard data:", error);
-        updateStatusMessage(adminMessage, `Network error loading admin dashboard data.`, true);
+        updateStatusMessage(adminMessage, `Network error loading admin dashboard data. Please ensure backend is running and URL is correct.`, true);
         return null;
     }
 }
@@ -266,7 +268,7 @@ async function handleTogglePause() {
 
         if (response.ok) {
             updateStatusMessage(togglePauseStatus, data.message, false);
-            fetchAdminDashboardData(); // Refresh admin UI to reflect new state
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(togglePauseStatus, `Failed to toggle: ${data.message}`, true);
             togglePauseBtn.disabled = false; 
@@ -279,7 +281,7 @@ async function handleTogglePause() {
 }
 
 // Handle setting new event duration
-async function handleSetEventDuration() { // Renamed function
+async function handleSetEventDuration() { 
     if (!selectedAdminAccount) {
         updateStatusMessage(setEventDurationStatus, "Admin wallet not connected.", true);
         return;
@@ -294,7 +296,7 @@ async function handleSetEventDuration() { // Renamed function
     updateStatusMessage(setEventDurationStatus, `Setting new event duration to ${durationHours} hours...`, false);
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/admin/set-event-duration`, { // Renamed endpoint
+        const response = await fetch(`${BACKEND_URL}/api/admin/set-event-duration`, { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ walletAddress: selectedAdminAccount, durationHours: durationHours })
@@ -303,8 +305,8 @@ async function handleSetEventDuration() { // Renamed function
 
         if (response.ok) {
             updateStatusMessage(setEventDurationStatus, data.message, false);
-            newEventDurationInput.value = ''; // Clear input
-            fetchAdminDashboardData(); // Refresh admin UI to show new timer
+            newEventDurationInput.value = ''; 
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(setEventDurationStatus, `Failed to set event duration: ${data.message}`, true);
             setEventDurationBtn.disabled = false;
@@ -341,8 +343,8 @@ async function handleSetStakingWalletAddress() {
 
         if (response.ok) {
             updateStatusMessage(setStakingWalletStatus, data.message, false);
-            newStakingWalletAddressInput.value = ''; // Clear input
-            fetchAdminDashboardData(); // Refresh UI
+            newStakingWalletAddressInput.value = ''; 
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(setStakingWalletStatus, `Failed to set address: ${data.message}`, true);
             setStakingWalletBtn.disabled = false;
@@ -379,8 +381,8 @@ async function handleSetStakeAmount() {
 
         if (response.ok) {
             updateStatusMessage(setStakeAmountStatus, data.message, false);
-            newStakeAmountInput.value = ''; // Clear input
-            fetchAdminDashboardData(); // Refresh UI
+            newStakeAmountInput.value = ''; 
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(setStakeAmountStatus, `Failed to set amount: ${data.message}`, true);
             setStakeAmountBtn.disabled = false;
@@ -417,8 +419,8 @@ async function handleSetMaxSlots() {
 
         if (response.ok) {
             updateStatusMessage(setMaxSlotsStatus, data.message, false);
-            newMaxSlotsInput.value = ''; // Clear input
-            fetchAdminDashboardData(); // Refresh UI
+            newMaxSlotsInput.value = ''; 
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(setMaxSlotsStatus, `Failed to set max slots: ${data.message}`, true);
             setMaxSlotsBtn.disabled = false;
@@ -455,8 +457,8 @@ async function handleSetMaxAinRewardPool() {
 
         if (response.ok) {
             updateStatusMessage(setMaxAinRewardPoolStatus, data.message, false);
-            maxAinRewardPoolInput.value = ''; // Clear input
-            fetchAdminDashboardData(); // Refresh UI
+            maxAinRewardPoolInput.value = ''; 
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(setMaxAinRewardPoolStatus, `Failed to set AIN pool: ${data.message}`, true);
             setMaxAinRewardPoolBtn.disabled = false;
@@ -488,7 +490,7 @@ async function handleToggleWithdrawalsPause() {
 
         if (response.ok) {
             updateStatusMessage(toggleWithdrawalsStatus, data.message, false);
-            fetchAdminDashboardData(); // Refresh admin UI to reflect new state
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(toggleWithdrawalsStatus, `Failed to toggle: ${data.message}`, true);
             toggleWithdrawalsPauseBtn.disabled = false;
@@ -574,7 +576,7 @@ async function fetchUsersLeaderboard(sortBy = 'referralCount') {
 
         if (response.ok) {
             leaderboardStatus.classList.add('hidden'); 
-            leaderboardTableBody.innerHTML = ''; // Clear previous data
+            leaderboardTableBody.innerHTML = ''; 
             totalUsersCountDisplay.textContent = data.users ? data.users.length : '0';
 
             if (data.users && data.users.length > 0) {
@@ -729,12 +731,12 @@ walletOptions.forEach(button => {
 
 // Admin specific button listeners
 togglePauseBtn.addEventListener('click', handleTogglePause);
-setEventDurationBtn.addEventListener('click', handleSetEventDuration); // Renamed listener
-setMaxSlotsBtn.addEventListener('click', handleSetMaxSlots); // Feature 6
-setStakingWalletBtn.addEventListener('click', handleSetStakingWalletAddress); // Feature 2
-setStakeAmountBtn.addEventListener('click', handleSetStakeAmount); // Feature 5
-setMaxAinRewardPoolBtn.addEventListener('click', handleSetMaxAinRewardPool); // Feature 3
-fundUserBtn.addEventListener('click', handleFundUser); // Feature 7
+setEventDurationBtn.addEventListener('click', handleSetEventDuration); 
+setMaxSlotsBtn.addEventListener('click', handleSetMaxSlots); 
+setStakingWalletBtn.addEventListener('click', handleSetStakingWalletAddress); 
+setStakeAmountBtn.addEventListener('click', handleSetStakeAmount); 
+setMaxAinRewardPoolBtn.addEventListener('click', handleSetMaxAinRewardPool); 
+fundUserBtn.addEventListener('click', handleFundUser); 
 toggleWithdrawalsPauseBtn.addEventListener('click', handleToggleWithdrawalsPause);
 refreshLeaderboardBtn.addEventListener('click', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
 leaderboardSortBy.addEventListener('change', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
@@ -748,7 +750,7 @@ if (window.ethereum) {
             selectedAdminAccount = null;
             adminMessage.textContent = "Please connect your wallet to verify admin access.";
             adminControls.classList.add('hidden');
-            if (adminEventTimerInterval) clearInterval(adminEventTimerInterval); // Clear admin timer
+            if (adminEventTimerInterval) clearInterval(adminEventTimerInterval); 
         } else {
             selectedAdminAccount = accounts[0];
             console.log('Admin Account changed to:', selectedAdminAccount);
@@ -766,7 +768,7 @@ if (window.ethereum) {
         if (web3.utils.toHex(chainId) !== BSC_CHAIN_ID) {
             updateStatusMessage(adminMessage, `Please switch to BNB Smart Chain (Chain ID 56). Current: ${chainId}`, true);
             adminControls.classList.add('hidden');
-            if (adminEventTimerInterval) clearInterval(adminEventTimerInterval); // Clear admin timer
+            if (adminEventTimerInterval) clearInterval(adminEventTimerInterval); 
         } else {
             updateStatusMessage(adminMessage, `Successfully switched to BSC.`, false);
             if (selectedAdminAccount) {
