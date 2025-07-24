@@ -13,7 +13,7 @@ let web3; // Will hold the Web3 instance
 let selectedAdminAccount = null;
 
 // Backend URL (Crucial: YOU MUST REPLACE THIS WITH YOUR ACTUAL DEPLOYED BACKEND URL)
-const BACKEND_URL = 'https://YOUR-ACTUAL-BACKEND-APP-NAME.fly.dev'; // <<<--- IMPORTANT: REPLACE THIS LINE
+const BACKEND_URL = 'https://bxc-backend-1dkpqw.fly.dev'; // <<<--- IMPORTANT: REPLACE THIS LINE
 
 // --- DOM Element References ---
 const connectWalletBtn = document.getElementById('connectWalletBtn');
