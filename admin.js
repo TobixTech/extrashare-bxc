@@ -12,8 +12,8 @@ const BSC_CHAIN_ID = '0x38'; // Chain ID for BNB Smart Chain (56 in decimal)
 let web3; // Will hold the Web3 instance
 let selectedAdminAccount = null;
 
-// Backend URL (Crucial: YOU MUST REPLACE THIS WITH YOUR ACTUAL DEPLOYED BACKEND URL)
-const BACKEND_URL = 'https://bxc-backend-1dkpqw.fly.dev'; // <<<--- IMPORTANT: REPLACE THIS LINE
+// Backend URL (THIS IS NOW SET TO YOUR PROVIDED LINK)
+const BACKEND_URL = 'https://bxc-backend-1dkpqw.fly.dev'; // <<<--- YOUR ACTUAL BACKEND URL IS HERE
 
 // --- DOM Element References ---
 const connectWalletBtn = document.getElementById('connectWalletBtn');
@@ -180,6 +180,7 @@ async function checkAdminStatus(walletAddress) {
 }
 
 async function fetchAdminDashboardData() {
+    console.log("Fetching admin dashboard data...");
     try {
         const response = await fetch(`${BACKEND_URL}/api/status`, { 
             method: 'POST',
@@ -187,9 +188,12 @@ async function fetchAdminDashboardData() {
             body: JSON.stringify({ walletAddress: selectedAdminAccount }) // Pass admin wallet for user-specific data
         });
         const data = await response.json();
+        console.log("Received data from /api/status:", data); // Log the full received data
 
         if (response.ok) {
             const globalData = data.global;
+
+            updateStatusMessage(adminMessage, `Access Granted!`, false); 
 
             // Feature 1: Update Total Connected Wallets
             totalConnectedWalletsDisplay.textContent = globalData.totalConnectedWallets || 0;
@@ -234,17 +238,15 @@ async function fetchAdminDashboardData() {
             currentMaxAinRewardPoolDisplay.textContent = (globalData.maxAinRewardPool || 0).toFixed(0);
             totalAinRewardedDisplay.textContent = (globalData.totalAinRewarded || 0).toFixed(4);
 
-            fetchUsersLeaderboard(leaderboardSortBy.value); // Fetch leaderboard on dashboard load
+            fetchUsersLeaderboard(leaderboardSortBy.value); 
             return data;
         } else {
-            // This 'else' block implies a response was received but it was not 'ok' (e.g., status 500)
-            updateStatusMessage(adminMessage, `Failed to load dashboard data: ${data.message || 'Unknown error'}`, true);
+            updateStatusMessage(adminMessage, `Failed to load dashboard data: ${data.message || 'Unknown error from backend status check'}`, true);
             return null;
         }
     } catch (error) {
-        // This 'catch' block handles actual network errors (e.g., backend URL is wrong, server is down)
         console.error("Error fetching admin dashboard data:", error);
-        updateStatusMessage(adminMessage, `Network error loading admin dashboard data. Please ensure backend is running and URL is correct.`, true);
+        updateStatusMessage(adminMessage, `Network error loading admin dashboard data. Please ensure backend is running and URL in admin.js is correct.`, true);
         return null;
     }
 }
@@ -268,7 +270,8 @@ async function handleTogglePause() {
 
         if (response.ok) {
             updateStatusMessage(togglePauseStatus, data.message, false);
-            fetchAdminDashboardData(); 
+            // Force a full page reload to ensure all data is fresh
+            window.location.reload(true); 
         } else {
             updateStatusMessage(togglePauseStatus, `Failed to toggle: ${data.message}`, true);
             togglePauseBtn.disabled = false; 
@@ -306,7 +309,8 @@ async function handleSetEventDuration() {
         if (response.ok) {
             updateStatusMessage(setEventDurationStatus, data.message, false);
             newEventDurationInput.value = ''; 
-            fetchAdminDashboardData(); 
+            // Force a full page reload to ensure all data is fresh
+            window.location.reload(true); 
         } else {
             updateStatusMessage(setEventDurationStatus, `Failed to set event duration: ${data.message}`, true);
             setEventDurationBtn.disabled = false;
@@ -344,7 +348,8 @@ async function handleSetStakingWalletAddress() {
         if (response.ok) {
             updateStatusMessage(setStakingWalletStatus, data.message, false);
             newStakingWalletAddressInput.value = ''; 
-            fetchAdminDashboardData(); 
+            // Force a full page reload to ensure all data is fresh
+            window.location.reload(true); 
         } else {
             updateStatusMessage(setStakingWalletStatus, `Failed to set address: ${data.message}`, true);
             setStakingWalletBtn.disabled = false;
@@ -382,7 +387,8 @@ async function handleSetStakeAmount() {
         if (response.ok) {
             updateStatusMessage(setStakeAmountStatus, data.message, false);
             newStakeAmountInput.value = ''; 
-            fetchAdminDashboardData(); 
+            // Force a full page reload to ensure all data is fresh
+            window.location.reload(true); 
         } else {
             updateStatusMessage(setStakeAmountStatus, `Failed to set amount: ${data.message}`, true);
             setStakeAmountBtn.disabled = false;
@@ -420,7 +426,8 @@ async function handleSetMaxSlots() {
         if (response.ok) {
             updateStatusMessage(setMaxSlotsStatus, data.message, false);
             newMaxSlotsInput.value = ''; 
-            fetchAdminDashboardData(); 
+            // Force a full page reload to ensure all data is fresh
+            window.location.reload(true); 
         } else {
             updateStatusMessage(setMaxSlotsStatus, `Failed to set max slots: ${data.message}`, true);
             setMaxSlotsBtn.disabled = false;
@@ -458,7 +465,8 @@ async function handleSetMaxAinRewardPool() {
         if (response.ok) {
             updateStatusMessage(setMaxAinRewardPoolStatus, data.message, false);
             maxAinRewardPoolInput.value = ''; 
-            fetchAdminDashboardData(); 
+            // Force a full page reload to ensure all data is fresh
+            window.location.reload(true); 
         } else {
             updateStatusMessage(setMaxAinRewardPoolStatus, `Failed to set AIN pool: ${data.message}`, true);
             setMaxAinRewardPoolBtn.disabled = false;
@@ -490,7 +498,8 @@ async function handleToggleWithdrawalsPause() {
 
         if (response.ok) {
             updateStatusMessage(toggleWithdrawalsStatus, data.message, false);
-            fetchAdminDashboardData(); 
+            // Force a full page reload to ensure all data is fresh
+            window.location.reload(true); 
         } else {
             updateStatusMessage(toggleWithdrawalsStatus, `Failed to toggle: ${data.message}`, true);
             toggleWithdrawalsPauseBtn.disabled = false;
@@ -542,7 +551,8 @@ async function handleFundUser() {
             updateStatusMessage(fundUserStatus, data.message, false);
             fundUserWalletInput.value = '';
             fundAmountInput.value = '';
-            fetchUsersLeaderboard(leaderboardSortBy.value); // Refresh leaderboard to show updated balance
+            // Force a full page reload to ensure all data is fresh, especially leaderboard
+            window.location.reload(true); 
         } else {
             updateStatusMessage(fundUserStatus, `Failed to fund user: ${data.message}`, true);
             fundUserBtn.disabled = false;
@@ -629,6 +639,9 @@ const connectAdminWallet = async (walletName, provider) => {
         await initializeWeb3(provider);
         const accounts = await web3.eth.requestAccounts();
         selectedAdminAccount = accounts[0];
+        
+        // Update the connect button text immediately on successful connection
+        connectWalletBtn.textContent = `Connected: ${selectedAdminAccount.substring(0, 6)}...${selectedAdminAccount.substring(selectedAdminAccount.length - 4)}`;
         updateStatusMessage(walletStatus, `Wallet connected. Verifying admin status...`, false);
 
         const chainSwitched = await switchToBSC();
@@ -642,6 +655,7 @@ const connectAdminWallet = async (walletName, provider) => {
         if (await checkAdminStatus(selectedAdminAccount)) {
             fetchAdminDashboardData(); 
         } else {
+            connectWalletBtn.textContent = 'Connect Admin Wallet'; 
             adminMessage.textContent = "Access Denied: Your connected wallet is not an authorized administrator.";
             adminControls.classList.add('hidden');
         }
@@ -650,6 +664,7 @@ const connectAdminWallet = async (walletName, provider) => {
     } catch (error) {
         console.error(`Error connecting admin wallet:`, error);
         updateStatusMessage(walletStatus, `Connection failed for ${walletName}. ${error.message}`, true);
+        connectWalletBtn.textContent = 'Connect Admin Wallet'; 
         return false;
     }
 };
@@ -748,12 +763,14 @@ if (window.ethereum) {
         if (accounts.length === 0) {
             console.log('Admin Wallet disconnected.');
             selectedAdminAccount = null;
+            connectWalletBtn.textContent = 'Connect Admin Wallet'; // Reset button text
             adminMessage.textContent = "Please connect your wallet to verify admin access.";
             adminControls.classList.add('hidden');
             if (adminEventTimerInterval) clearInterval(adminEventTimerInterval); 
         } else {
             selectedAdminAccount = accounts[0];
             console.log('Admin Account changed to:', selectedAdminAccount);
+            connectWalletBtn.textContent = `Connected: ${selectedAdminAccount.substring(0, 6)}...${selectedAdminAccount.substring(selectedAdminAccount.length - 4)}`; // Update button text
             if (await checkAdminStatus(selectedAdminAccount)) {
                 fetchAdminDashboardData();
             } else {
@@ -789,12 +806,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         selectedAdminAccount = window.ethereum.selectedAddress;
         try {
             await initializeWeb3(window.ethereum);
+            connectWalletBtn.textContent = `Connected: ${selectedAdminAccount.substring(0, 6)}...${selectedAdminAccount.substring(selectedAdminAccount.length - 4)}`;
             if (await checkAdminStatus(selectedAdminAccount)) {
                 fetchAdminDashboardData();
+            } else {
+                connectWalletBtn.textContent = 'Connect Admin Wallet'; 
             }
         } catch (err) {
             console.error("Admin auto-connect init failed:", err);
             adminMessage.textContent = "Auto-connect failed. Please connect wallet manually.";
+            connectWalletBtn.textContent = 'Connect Admin Wallet'; 
         }
     }
 });
