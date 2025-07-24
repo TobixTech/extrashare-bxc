@@ -48,9 +48,14 @@ const revealedRewardAmountDisplay = document.getElementById('revealedRewardAmoun
 const collectRewardBtn = document.getElementById('collectRewardBtn');
 const rewardStatus = document.getElementById('rewardStatus');
 
-const partneredCoinEarnedDisplay = document.getElementById('partneredCoinEarned');
-const withdrawPartneredCoinBtn = document.getElementById('withdrawPartneredCoinBtn');
-const partneredCoinStatus = document.getElementById('partneredCoinStatus');
+// NEW: Partnered Coin Gift Box UI elements
+const partneredCoinHeader = document.getElementById('partneredCoinHeader');
+const partneredCoinEarnedDisplay = document.getElementById('partneredCoinEarned'); // Existing
+const rewardClaimBefore = document.getElementById('rewardClaimBefore');
+const luckierBadge = document.getElementById('luckierBadge');
+const partneredCoinMessage = document.getElementById('partneredCoinMessage'); // For "Click to view result" or non-win message
+const withdrawPartneredCoinBtn = document.getElementById('withdrawPartneredCoinBtn'); // Existing
+const partneredCoinStatus = document.getElementById('partneredCoinStatus'); // Existing
 
 const referralCodeDisplay = document.getElementById('referralCodeDisplay');
 const copyReferralCodeBtn = document.getElementById('copyReferralCodeBtn');
@@ -135,14 +140,38 @@ function updateDashboardUI(data) {
         // Update Connect Wallet Button text
         connectWalletBtn.textContent = `${data.user.walletAddress.substring(0, 6)}...${data.user.walletAddress.substring(data.user.walletAddress.length - 4)}`;
         // Optionally change button styling to indicate connected status
-        connectWalletBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'text-white'); // Example connected styling
         connectWalletBtn.classList.remove('bg-white', 'hover:bg-gray-100', 'text-cyan-700'); // Remove initial styling
+        connectWalletBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'text-white'); // Add connected styling
 
 
         currentStakeValueDisplay.textContent = `$${(data.user.stakedUSDValue || 0).toFixed(2)}`;
         bxcBalanceDisplay.textContent = `${(data.user.BXC_Balance || 0).toFixed(4)} BXC`;
-        partneredCoinEarnedDisplay.textContent = `${(data.user.AIN_Balance || 0).toFixed(4)} AIN`;
         
+        // NEW: Update Partnered Coin Gift Box UI
+        const userAINBalance = data.user.AIN_Balance || 0;
+        partneredCoinEarnedDisplay.textContent = `${userAINBalance.toFixed(4)} AIN`;
+        
+        if (userAINBalance > 0) {
+            partneredCoinHeader.textContent = "Congratulations!";
+            partneredCoinHeader.classList.add('gradient-accent-text', 'bg-clip-text', 'text-transparent');
+            partneredCoinMessage.classList.add('hidden'); // Hide generic message
+            luckierBadge.classList.remove('hidden'); // Show luckier badge (dummy value for now)
+            luckierBadge.textContent = `Luckier than ${Math.floor(Math.random() * 50) + 50}% of users`; // Random 50-99%
+            // Use eventEndTime as placeholder for claim before date
+            const claimBeforeDate = data.global.eventEndTime ? new Date(data.global.eventEndTime).toLocaleString() : 'N/A';
+            rewardClaimBefore.textContent = `Claim before ${claimBeforeDate}`;
+            rewardClaimBefore.classList.remove('hidden');
+        } else {
+            partneredCoinHeader.textContent = "Partnered Coin Rewards"; // Default header
+            partneredCoinHeader.classList.remove('gradient-accent-text', 'bg-clip-text', 'text-transparent');
+            partneredCoinHeader.style.color = '#1A202C'; // Ensure dark text if no gradient
+            partneredCoinMessage.textContent = "No AIN rewards yet. Flip a card after event ends!";
+            partneredCoinMessage.classList.remove('hidden');
+            luckierBadge.classList.add('hidden'); // Hide luckier badge
+            rewardClaimBefore.classList.add('hidden'); // Hide claim date
+        }
+
+
         // Referral Code & Link
         referralCodeDisplay.textContent = data.user.referralCode || 'Connect Wallet';
         referralLinkDisplay.textContent = `${window.location.origin}/?ref=${data.user.referralCode || 'YOURCODE'}`;
@@ -151,30 +180,26 @@ function updateDashboardUI(data) {
         const isEventPaused = data.global.isPaused || false;
         const withdrawalsGloballyPaused = data.global.withdrawalsPaused || false; 
 
-        stakeBtn.disabled = data.user.slotsStaked > 0 || isEventPaused; // Disable stake if already staked OR event paused
+        stakeBtn.disabled = data.user.slotsStaked > 0 || isEventPaused;
         
-        // All withdrawal buttons now also check withdrawalsGloballyPaused
         withdrawStakeBtn.disabled = !(data.user.slotsStaked > 0) || isEventPaused || withdrawalsGloballyPaused; 
         withdrawBxcBtn.disabled = !(data.user.BXC_Balance > 0) || isEventPaused || withdrawalsGloballyPaused;
         withdrawPartneredCoinBtn.disabled = !(data.user.AIN_Balance > 0) || isEventPaused || withdrawalsGloballyPaused;
 
 
-        // Enable flip if event has ended AND user staked AND user hasn't revealed yet for this cycle AND not paused
         const now = new Date().getTime();
         const eventEnded = data.global.eventEndTime && now >= new Date(data.global.eventEndTime).getTime();
         const hasNotRevealedThisCycle = !data.user.claimedEventRewardTime || (data.global.eventStartTime && new Date(data.user.claimedEventRewardTime).getTime() < new Date(data.global.eventStartTime).getTime());
         
         flipRewardBtn.disabled = !(data.user.slotsStaked > 0 && eventEnded && hasNotRevealedThisCycle && !isEventPaused);
         
-        // Enable collect button only if reward revealed and not collected for this cycle AND not paused
         const hasRevealedAndNotCollected = data.user.lastRevealedUSDAmount > 0 && (!data.user.collectedEventRewardTime || (data.global.eventStartTime && new Date(data.user.collectedEventRewardTime).getTime() < new Date(data.global.eventStartTime).getTime()));
         collectRewardBtn.disabled = !hasRevealedAndNotCollected || isEventPaused;
 
-        // If user has staked and eventEndTime is available, start BXC accrual (only if not paused)
         if (data.user.slotsStaked > 0 && data.global.eventEndTime && !isEventPaused) {
             startBXCAccrual(data.user.BXC_Balance, data.global.eventEndTime, data.user.lastBXCAccrualTime);
         } else {
-             if (bxcAccrualInterval) clearInterval(bxcAccrualInterval); // Stop accrual if not staked, event hasn't started/ended, OR PAUSED
+             if (bxcAccrualInterval) clearInterval(bxcAccrualInterval);
         }
 
     } else {
@@ -185,22 +210,31 @@ function updateDashboardUI(data) {
 
         currentStakeValueDisplay.textContent = `$0.00`;
         bxcBalanceDisplay.textContent = `0.0000 BXC`;
+        
+        // NEW: Reset Partnered Coin Gift Box UI for non-connected state
+        partneredCoinHeader.textContent = "Partnered Coin Rewards";
+        partneredCoinHeader.classList.remove('gradient-accent-text', 'bg-clip-text', 'text-transparent');
+        partneredCoinHeader.style.color = '#1A202C'; // Ensure dark text if no gradient
         partneredCoinEarnedDisplay.textContent = `0.0000 AIN`;
+        partneredCoinMessage.textContent = "Connect wallet to see your rewards!";
+        partneredCoinMessage.classList.remove('hidden');
+        luckierBadge.classList.add('hidden');
+        rewardClaimBefore.classList.add('hidden');
+
         referralCodeDisplay.textContent = 'Connect Wallet';
         referralLinkDisplay.textContent = `${window.location.origin}/?ref=YOURCODE`;
         
-        // Disable user-specific buttons (unless needed to initiate connection/stake)
         const isEventPaused = data.global.isPaused || false;
         const withdrawalsGloballyPaused = data.global.withdrawalsPaused || false;
         
-        stakeBtn.disabled = isEventPaused; // Can't stake if paused
+        stakeBtn.disabled = isEventPaused;
         withdrawStakeBtn.disabled = true;
         withdrawBxcBtn.disabled = true;
         flipRewardBtn.disabled = true;
         collectRewardBtn.disabled = true;
         withdrawPartneredCoinBtn.disabled = true;
 
-        if (bxcAccrualInterval) clearInterval(bxcAccrualInterval); // Stop accrual if no user
+        if (bxcAccrualInterval) clearInterval(bxcAccrualInterval);
     }
 }
 
@@ -243,7 +277,7 @@ async function handleStake() {
         const amountBnb = amountUsd / bnbPriceUsd;
         const amountWei = web3.utils.toWei(amountBnb.toFixed(18), 'ether');
 
-        const stakeRecipientAddress = '0x9FfDabC1b4e1d0a2B64045C32EBf3231F8541578'; // <--- UPDATE THIS IN PRODUCTION
+        const stakeRecipientAddress = '0xYourStakeRecipientAddressHere'; // <--- UPDATE THIS IN PRODUCTION
 
         const transactionParameters = {
             to: stakeRecipientAddress,
@@ -526,7 +560,7 @@ async function handleShareReferralLink() {
 }
 
 
-// --- Wallet Connection Logic (Copied from previous steps) ---
+// --- Wallet Connection Logic ---
 
 const initializeWeb3 = async (provider) => {
     web3 = new Web3(provider);
@@ -537,7 +571,7 @@ const initializeWeb3 = async (provider) => {
 const connectWallet = async (walletName, provider) => {
     try {
         if (!provider) {
-            updateStatusMessage(walletStatus, `${walletName} is not installed. Please install it to continue.`, true);
+            updateStatusMessage(walletStatus, `${walletName} is not detected. Please install it to continue.`, true);
             return false;
         }
 
