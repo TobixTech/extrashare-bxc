@@ -32,44 +32,44 @@ const connectedAdminWalletDisplay = document.getElementById('connectedAdminWalle
 const totalConnectedWalletsDisplay = document.getElementById('totalConnectedWalletsDisplay');
 
 const adminEventTimerDisplay = document.getElementById('adminEventTimer');
-const eventTimerLabel = document.getElementById('eventTimerLabel'); 
+const eventTimerLabel = document.getElementById('eventTimerLabel');
 const adminParticipantsCountDisplay = document.getElementById('adminParticipantsCount');
 const adminParticipantsProgressBar = document.getElementById('adminParticipantsProgressBar');
 
 // Admin Action Buttons & Status Displays
 const togglePauseBtn = document.getElementById('togglePauseBtn');
-const togglePauseStatus = document.getElementById('togglePauseStatus'); 
+const togglePauseStatus = document.getElementById('togglePauseStatus');
 
 const newEventDurationInput = document.getElementById('newEventDurationInput');
-const setEventDurationBtn = document.getElementById('setEventDurationBtn'); 
-const setEventDurationStatus = document.getElementById('setEventDurationStatus'); 
+const setEventDurationBtn = document.getElementById('setEventDurationBtn');
+const setEventDurationStatus = document.getElementById('setEventDurationStatus');
 
-const newMaxSlotsInput = document.getElementById('newMaxSlotsInput'); 
-const setMaxSlotsBtn = document.getElementById('setMaxSlotsBtn');     
-const setMaxSlotsStatus = document.getElementById('setMaxSlotsStatus'); 
-const currentMaxSlotsDisplay = document.getElementById('currentMaxSlotsDisplay'); 
+const newMaxSlotsInput = document.getElementById('newMaxSlotsInput');
+const setMaxSlotsBtn = document.getElementById('setMaxSlotsBtn');
+const setMaxSlotsStatus = document.getElementById('setMaxSlotsStatus');
+const currentMaxSlotsDisplay = document.getElementById('currentMaxSlotsDisplay');
 
-const newStakingWalletAddressInput = document.getElementById('newStakingWalletAddressInput'); 
-const setStakingWalletBtn = document.getElementById('setStakingWalletBtn');                 
-const setStakingWalletStatus = document.getElementById('setStakingWalletStatus');           
-const currentStakingWalletDisplay = document.getElementById('currentStakingWalletDisplay'); 
+const newStakingWalletAddressInput = document.getElementById('newStakingWalletAddressInput');
+const setStakingWalletBtn = document.getElementById('setStakingWalletBtn');
+const setStakingWalletStatus = document.getElementById('setStakingWalletStatus');
+const currentStakingWalletDisplay = document.getElementById('currentStakingWalletDisplay');
 
-const newStakeAmountInput = document.getElementById('newStakeAmountInput'); 
-const setStakeAmountBtn = document.getElementById('setStakeAmountBtn');     
-const setStakeAmountStatus = document.getElementById('setStakeAmountStatus'); 
-const currentStakeAmountDisplay = document.getElementById('currentStakeAmountDisplay'); 
+const newStakeAmountInput = document.getElementById('newStakeAmountInput');
+const setStakeAmountBtn = document.getElementById('setStakeAmountBtn');
+const setStakeAmountStatus = document.getElementById('setStakeAmountStatus');
+const currentStakeAmountDisplay = document.getElementById('currentStakeAmountDisplay');
 
-const maxAinRewardPoolInput = document.getElementById('maxAinRewardPoolInput'); 
-const setMaxAinRewardPoolBtn = document.getElementById('setMaxAinRewardPoolBtn'); 
-const setMaxAinRewardPoolStatus = document.getElementById('setMaxAinRewardPoolStatus'); 
-const currentMaxAinRewardPoolDisplay = document.getElementById('currentMaxAinRewardPoolDisplay'); 
-const totalAinRewardedDisplay = document.getElementById('totalAinRewardedDisplay'); 
+const maxAinRewardPoolInput = document.getElementById('maxAinRewardPoolInput');
+const setMaxAinRewardPoolBtn = document.getElementById('setMaxAinRewardPoolBtn');
+const setMaxAinRewardPoolStatus = document.getElementById('setMaxAinRewardPoolStatus');
+const currentMaxAinRewardPoolDisplay = document.getElementById('currentMaxAinRewardPoolDisplay');
+const totalAinRewardedDisplay = document.getElementById('totalAinRewardedDisplay');
 
-const fundUserWalletInput = document.getElementById('fundUserWalletInput'); 
-const fundAmountInput = document.getElementById('fundAmountInput');         
-const fundTokenTypeSelect = document.getElementById('fundTokenTypeSelect'); 
-const fundUserBtn = document.getElementById('fundUserBtn');                 
-const fundUserStatus = document.getElementById('fundUserStatus');           
+const fundUserWalletInput = document.getElementById('fundUserWalletInput');
+const fundAmountInput = document.getElementById('fundAmountInput');
+const fundTokenTypeSelect = document.getElementById('fundTokenTypeSelect');
+const fundUserBtn = document.getElementById('fundUserBtn');
+const fundUserStatus = document.getElementById('fundUserStatus');
 
 const withdrawalsStatusDisplay = document.getElementById('withdrawalsStatusDisplay');
 const toggleWithdrawalsPauseBtn = document.getElementById('toggleWithdrawalsPauseBtn');
@@ -79,7 +79,7 @@ const leaderboardSortBy = document.getElementById('leaderboardSortBy');
 const refreshLeaderboardBtn = document.getElementById('refreshLeaderboardBtn');
 const leaderboardTableBody = document.getElementById('leaderboardTableBody');
 const leaderboardStatus = document.getElementById('leaderboardStatus');
-const totalUsersCountDisplay = document.getElementById('totalUsersCountDisplay'); 
+const totalUsersCountDisplay = document.getElementById('totalUsersCountDisplay');
 
 // --- Utility Functions ---
 function updateStatusMessage(element, message, isError = false) {
@@ -106,7 +106,7 @@ function startAdminEventTimer(endTimeTimestamp, isPaused, eventStartTime) {
     }
 
     const eventEndTimeMs = new Date(endTimeTimestamp).getTime();
-    const eventStartTimeMs = new Date(eventStartTime).getTime(); 
+    const eventStartTimeMs = new Date(eventStartTime).getTime();
     const nowMs = new Date().getTime();
 
     // If already paused, display PAUSED and stop timer
@@ -114,16 +114,16 @@ function startAdminEventTimer(endTimeTimestamp, isPaused, eventStartTime) {
         adminEventTimerDisplay.textContent = "PAUSED";
         eventTimerLabel.textContent = "Event Status";
         togglePauseBtn.textContent = "Resume Event";
-        togglePauseBtn.disabled = false; 
+        togglePauseBtn.disabled = false;
         return;
     }
 
-    // If event hasn't genuinely started yet 
+    // If event hasn't genuinely started yet
     if (nowMs < eventStartTimeMs) {
         adminEventTimerDisplay.textContent = "NOT STARTED";
         eventTimerLabel.textContent = "Event Status";
-        togglePauseBtn.textContent = "Event Not Started"; 
-        togglePauseBtn.disabled = true; 
+        togglePauseBtn.textContent = "Event Not Started";
+        togglePauseBtn.disabled = true;
         return;
     }
 
@@ -137,7 +137,7 @@ function startAdminEventTimer(endTimeTimestamp, isPaused, eventStartTime) {
             adminEventTimerDisplay.textContent = "00:00:00:00 (ENDED)";
             eventTimerLabel.textContent = "Event Status";
             togglePauseBtn.textContent = "Event Ended";
-            togglePauseBtn.disabled = true; 
+            togglePauseBtn.disabled = true;
             return;
         }
 
@@ -180,43 +180,42 @@ async function checkAdminStatus(walletAddress) {
 }
 
 async function fetchAdminDashboardData() {
-    console.log("Fetching admin dashboard data...");
+    console.log("Attempting to fetch admin dashboard data from:", `${BACKEND_URL}/api/status`);
     try {
-        const response = await fetch(`${BACKEND_URL}/api/status`, { 
+        const response = await fetch(`${BACKEND_URL}/api/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ walletAddress: selectedAdminAccount }) // Pass admin wallet for user-specific data
+            body: JSON.stringify({ walletAddress: selectedAdminAccount })
         });
+
+        console.log("Raw response from /api/status:", response);
         const data = await response.json();
-        console.log("Received data from /api/status:", data); // Log the full received data
+        console.log("Parsed data from /api/status:", data);
 
         if (response.ok) {
             const globalData = data.global;
 
-            updateStatusMessage(adminMessage, `Access Granted!`, false); 
+            updateStatusMessage(adminMessage, `Access Granted!`, false);
 
-            // Feature 1: Update Total Connected Wallets
             totalConnectedWalletsDisplay.textContent = globalData.totalConnectedWallets || 0;
 
-            const participantsTotalSlots = globalData.maxStakeSlots || 30000; 
+            const participantsTotalSlots = globalData.maxStakeSlots || 30000;
             const stakedSlots = globalData.totalSlotsUsed || 0;
             const percentage = (stakedSlots / participantsTotalSlots) * 100;
 
             adminParticipantsCountDisplay.textContent = `${stakedSlots}/${participantsTotalSlots}`;
             adminParticipantsProgressBar.style.width = `${percentage}%`;
 
-            // Display timer
             if (globalData.eventEndTime) {
-                const isEventPaused = globalData.isPaused || false; 
-                const eventStartTime = globalData.eventStartTime; 
-                startAdminEventTimer(globalData.eventEndTime, isEventPaused, eventStartTime);
+                const isEventPaused = globalData.isPaused || false;
+                const eventStartTime = globalData.eventStartTime;
+                startAdminEventTimer(globalData.eventEndTime, isPaused, eventStartTime);
             } else {
                 adminEventTimerDisplay.textContent = "No Event Set";
                 togglePauseBtn.disabled = true;
                 eventTimerLabel.textContent = "Event Status";
             }
 
-            // Update withdrawals status display
             const withdrawalsPaused = globalData.withdrawalsPaused || false;
             withdrawalsStatusDisplay.textContent = withdrawalsPaused ? "Paused" : "Active";
             withdrawalsStatusDisplay.classList.toggle('text-red-500', withdrawalsPaused);
@@ -224,28 +223,25 @@ async function fetchAdminDashboardData() {
             toggleWithdrawalsPauseBtn.textContent = withdrawalsPaused ? "Resume All Withdrawals" : "Pause All Withdrawals";
             toggleWithdrawalsPauseBtn.disabled = false;
 
-            // Feature 2: Update current staking wallet address display
-            currentStakingWalletDisplay.textContent = globalData.stakingRecipientAddress ? 
+            currentStakingWalletDisplay.textContent = globalData.stakingRecipientAddress ?
                 `${globalData.stakingRecipientAddress.substring(0, 6)}...${globalData.stakingRecipientAddress.substring(globalData.stakingRecipientAddress.length - 4)}` : 'Not Set';
-            
-            // Feature 5: Update current stake amount display
+
             currentStakeAmountDisplay.textContent = (globalData.initialStakeAmountUSD || 0).toFixed(2);
 
-            // Feature 6: Update current max slots display
             currentMaxSlotsDisplay.textContent = globalData.maxStakeSlots || 0;
 
-            // Feature 3: Update AIN reward pool displays
             currentMaxAinRewardPoolDisplay.textContent = (globalData.maxAinRewardPool || 0).toFixed(0);
             totalAinRewardedDisplay.textContent = (globalData.totalAinRewarded || 0).toFixed(4);
 
-            fetchUsersLeaderboard(leaderboardSortBy.value); 
+            fetchUsersLeaderboard(leaderboardSortBy.value);
             return data;
         } else {
+            console.error("Response not OK for /api/status:", data.message || "Unknown reason.");
             updateStatusMessage(adminMessage, `Failed to load dashboard data: ${data.message || 'Unknown error from backend status check'}`, true);
             return null;
         }
     } catch (error) {
-        console.error("Error fetching admin dashboard data:", error);
+        console.error("Network or parsing error fetching admin dashboard data:", error);
         updateStatusMessage(adminMessage, `Network error loading admin dashboard data. Please ensure backend is running and URL in admin.js is correct.`, true);
         return null;
     }
@@ -257,7 +253,7 @@ async function handleTogglePause() {
         updateStatusMessage(togglePauseStatus, "Admin wallet not connected.", true);
         return;
     }
-    togglePauseBtn.disabled = true; 
+    togglePauseBtn.disabled = true;
     updateStatusMessage(togglePauseStatus, "Toggling event pause state...", false);
 
     try {
@@ -270,21 +266,20 @@ async function handleTogglePause() {
 
         if (response.ok) {
             updateStatusMessage(togglePauseStatus, data.message, false);
-            // Force a full page reload to ensure all data is fresh
-            window.location.reload(true); 
+            window.location.reload(true);
         } else {
             updateStatusMessage(togglePauseStatus, `Failed to toggle: ${data.message}`, true);
-            togglePauseBtn.disabled = false; 
+            togglePauseBtn.disabled = false;
         }
     } catch (error) {
         console.error("Error toggling event pause:", error);
         updateStatusMessage(togglePauseStatus, `Network error toggling pause.`, true);
-        togglePauseBtn.disabled = false; 
+        togglePauseBtn.disabled = false;
     }
 }
 
 // Handle setting new event duration
-async function handleSetEventDuration() { 
+async function handleSetEventDuration() {
     if (!selectedAdminAccount) {
         updateStatusMessage(setEventDurationStatus, "Admin wallet not connected.", true);
         return;
@@ -299,7 +294,7 @@ async function handleSetEventDuration() {
     updateStatusMessage(setEventDurationStatus, `Setting new event duration to ${durationHours} hours...`, false);
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/admin/set-event-duration`, { 
+        const response = await fetch(`${BACKEND_URL}/api/admin/set-event-duration`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ walletAddress: selectedAdminAccount, durationHours: durationHours })
@@ -308,9 +303,8 @@ async function handleSetEventDuration() {
 
         if (response.ok) {
             updateStatusMessage(setEventDurationStatus, data.message, false);
-            newEventDurationInput.value = ''; 
-            // Force a full page reload to ensure all data is fresh
-            window.location.reload(true); 
+            newEventDurationInput.value = '';
+            window.location.reload(true);
         } else {
             updateStatusMessage(setEventDurationStatus, `Failed to set event duration: ${data.message}`, true);
             setEventDurationBtn.disabled = false;
@@ -347,9 +341,8 @@ async function handleSetStakingWalletAddress() {
 
         if (response.ok) {
             updateStatusMessage(setStakingWalletStatus, data.message, false);
-            newStakingWalletAddressInput.value = ''; 
-            // Force a full page reload to ensure all data is fresh
-            window.location.reload(true); 
+            newStakingWalletAddressInput.value = '';
+            window.location.reload(true);
         } else {
             updateStatusMessage(setStakingWalletStatus, `Failed to set address: ${data.message}`, true);
             setStakingWalletBtn.disabled = false;
@@ -386,9 +379,8 @@ async function handleSetStakeAmount() {
 
         if (response.ok) {
             updateStatusMessage(setStakeAmountStatus, data.message, false);
-            newStakeAmountInput.value = ''; 
-            // Force a full page reload to ensure all data is fresh
-            window.location.reload(true); 
+            newStakeAmountInput.value = '';
+            window.location.reload(true);
         } else {
             updateStatusMessage(setStakeAmountStatus, `Failed to set amount: ${data.message}`, true);
             setStakeAmountBtn.disabled = false;
@@ -425,9 +417,8 @@ async function handleSetMaxSlots() {
 
         if (response.ok) {
             updateStatusMessage(setMaxSlotsStatus, data.message, false);
-            newMaxSlotsInput.value = ''; 
-            // Force a full page reload to ensure all data is fresh
-            window.location.reload(true); 
+            newMaxSlotsInput.value = '';
+            window.location.reload(true);
         } else {
             updateStatusMessage(setMaxSlotsStatus, `Failed to set max slots: ${data.message}`, true);
             setMaxSlotsBtn.disabled = false;
@@ -464,9 +455,8 @@ async function handleSetMaxAinRewardPool() {
 
         if (response.ok) {
             updateStatusMessage(setMaxAinRewardPoolStatus, data.message, false);
-            maxAinRewardPoolInput.value = ''; 
-            // Force a full page reload to ensure all data is fresh
-            window.location.reload(true); 
+            maxAinRewardPoolInput.value = '';
+            window.location.reload(true);
         } else {
             updateStatusMessage(setMaxAinRewardPoolStatus, `Failed to set AIN pool: ${data.message}`, true);
             setMaxAinRewardPoolBtn.disabled = false;
@@ -477,7 +467,6 @@ async function handleSetMaxAinRewardPool() {
         setMaxAinRewardPoolBtn.disabled = false;
     }
 }
-
 
 // Handle toggling all withdrawals pause
 async function handleToggleWithdrawalsPause() {
@@ -498,8 +487,7 @@ async function handleToggleWithdrawalsPause() {
 
         if (response.ok) {
             updateStatusMessage(toggleWithdrawalsStatus, data.message, false);
-            // Force a full page reload to ensure all data is fresh
-            window.location.reload(true); 
+            window.location.reload(true);
         } else {
             updateStatusMessage(toggleWithdrawalsStatus, `Failed to toggle: ${data.message}`, true);
             toggleWithdrawalsPauseBtn.disabled = false;
@@ -538,11 +526,11 @@ async function handleFundUser() {
         const response = await fetch(`${BACKEND_URL}/api/admin/fund-user`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                walletAddress: selectedAdminAccount, 
-                targetWalletAddress: targetWalletAddress, 
-                tokenType: tokenType, 
-                amount: amount 
+            body: JSON.stringify({
+                walletAddress: selectedAdminAccount,
+                targetWalletAddress: targetWalletAddress,
+                tokenType: tokenType,
+                amount: amount
             })
         });
         const data = await response.json();
@@ -551,8 +539,7 @@ async function handleFundUser() {
             updateStatusMessage(fundUserStatus, data.message, false);
             fundUserWalletInput.value = '';
             fundAmountInput.value = '';
-            // Force a full page reload to ensure all data is fresh, especially leaderboard
-            window.location.reload(true); 
+            window.location.reload(true);
         } else {
             updateStatusMessage(fundUserStatus, `Failed to fund user: ${data.message}`, true);
             fundUserBtn.disabled = false;
@@ -564,7 +551,6 @@ async function handleFundUser() {
     }
 }
 
-
 // Feature 4: Fetch and display users leaderboard
 async function fetchUsersLeaderboard(sortBy = 'referralCount') {
     if (!selectedAdminAccount) {
@@ -574,7 +560,7 @@ async function fetchUsersLeaderboard(sortBy = 'referralCount') {
         return;
     }
     updateStatusMessage(leaderboardStatus, "Fetching users leaderboard...", false);
-    leaderboardStatus.classList.remove('hidden'); 
+    leaderboardStatus.classList.remove('hidden');
 
     try {
         const response = await fetch(`${BACKEND_URL}/api/admin/users-leaderboard`, {
@@ -585,8 +571,8 @@ async function fetchUsersLeaderboard(sortBy = 'referralCount') {
         const data = await response.json();
 
         if (response.ok) {
-            leaderboardStatus.classList.add('hidden'); 
-            leaderboardTableBody.innerHTML = ''; 
+            leaderboardStatus.classList.add('hidden');
+            leaderboardTableBody.innerHTML = '';
             totalUsersCountDisplay.textContent = data.users ? data.users.length : '0';
 
             if (data.users && data.users.length > 0) {
@@ -639,8 +625,7 @@ const connectAdminWallet = async (walletName, provider) => {
         await initializeWeb3(provider);
         const accounts = await web3.eth.requestAccounts();
         selectedAdminAccount = accounts[0];
-        
-        // Update the connect button text immediately on successful connection
+
         connectWalletBtn.textContent = `Connected: ${selectedAdminAccount.substring(0, 6)}...${selectedAdminAccount.substring(selectedAdminAccount.length - 4)}`;
         updateStatusMessage(walletStatus, `Wallet connected. Verifying admin status...`, false);
 
@@ -650,12 +635,12 @@ const connectAdminWallet = async (walletName, provider) => {
             return false;
         }
 
-        walletModal.classList.add('hidden'); 
-        
+        walletModal.classList.add('hidden');
+
         if (await checkAdminStatus(selectedAdminAccount)) {
-            fetchAdminDashboardData(); 
+            fetchAdminDashboardData();
         } else {
-            connectWalletBtn.textContent = 'Connect Admin Wallet'; 
+            connectWalletBtn.textContent = 'Connect Admin Wallet';
             adminMessage.textContent = "Access Denied: Your connected wallet is not an authorized administrator.";
             adminControls.classList.add('hidden');
         }
@@ -664,7 +649,7 @@ const connectAdminWallet = async (walletName, provider) => {
     } catch (error) {
         console.error(`Error connecting admin wallet:`, error);
         updateStatusMessage(walletStatus, `Connection failed for ${walletName}. ${error.message}`, true);
-        connectWalletBtn.textContent = 'Connect Admin Wallet'; 
+        connectWalletBtn.textContent = 'Connect Admin Wallet';
         return false;
     }
 };
@@ -708,7 +693,7 @@ const switchToBSC = async () => {
     }
 };
 
-// --- Event Listeners ---
+           // --- Event Listeners ---
 connectWalletBtn.addEventListener('click', () => {
     walletModal.classList.remove('hidden');
     walletStatus.classList.add('hidden');
@@ -746,15 +731,15 @@ walletOptions.forEach(button => {
 
 // Admin specific button listeners
 togglePauseBtn.addEventListener('click', handleTogglePause);
-setEventDurationBtn.addEventListener('click', handleSetEventDuration); 
-setMaxSlotsBtn.addEventListener('click', handleSetMaxSlots); 
-setStakingWalletBtn.addEventListener('click', handleSetStakingWalletAddress); 
-setStakeAmountBtn.addEventListener('click', handleSetStakeAmount); 
-setMaxAinRewardPoolBtn.addEventListener('click', handleSetMaxAinRewardPool); 
-fundUserBtn.addEventListener('click', handleFundUser); 
+setEventDurationBtn.addEventListener('click', handleSetEventDuration);
+setMaxSlotsBtn.addEventListener('click', handleSetMaxSlots);
+setStakingWalletBtn.addEventListener('click', handleSetStakingWalletAddress);
+setStakeAmountBtn.addEventListener('click', handleSetStakeAmount);
+setMaxAinRewardPoolBtn.addEventListener('click', handleSetMaxAinRewardPool);
+fundUserBtn.addEventListener('click', handleFundUser);
 toggleWithdrawalsPauseBtn.addEventListener('click', handleToggleWithdrawalsPause);
-refreshLeaderboardBtn.addEventListener('click', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
-leaderboardSortBy.addEventListener('change', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
+refreshLeaderboardBtn.addEventListener('click', () => fetchUsersLeaderboard(leaderboardSortBy.value));
+leaderboardSortBy.addEventListener('change', () => fetchUsersLeaderboard(leaderboardSortBy.value));
 
 
 // Listen for account/chain changes
@@ -763,14 +748,14 @@ if (window.ethereum) {
         if (accounts.length === 0) {
             console.log('Admin Wallet disconnected.');
             selectedAdminAccount = null;
-            connectWalletBtn.textContent = 'Connect Admin Wallet'; // Reset button text
+            connectWalletBtn.textContent = 'Connect Admin Wallet';
             adminMessage.textContent = "Please connect your wallet to verify admin access.";
             adminControls.classList.add('hidden');
-            if (adminEventTimerInterval) clearInterval(adminEventTimerInterval); 
+            if (adminEventTimerInterval) clearInterval(adminEventTimerInterval);
         } else {
             selectedAdminAccount = accounts[0];
             console.log('Admin Account changed to:', selectedAdminAccount);
-            connectWalletBtn.textContent = `Connected: ${selectedAdminAccount.substring(0, 6)}...${selectedAdminAccount.substring(selectedAdminAccount.length - 4)}`; // Update button text
+            connectWalletBtn.textContent = `Connected: ${selectedAdminAccount.substring(0, 6)}...${selectedAdminAccount.substring(selectedAdminAccount.length - 4)}`;
             if (await checkAdminStatus(selectedAdminAccount)) {
                 fetchAdminDashboardData();
             } else {
@@ -785,7 +770,7 @@ if (window.ethereum) {
         if (web3.utils.toHex(chainId) !== BSC_CHAIN_ID) {
             updateStatusMessage(adminMessage, `Please switch to BNB Smart Chain (Chain ID 56). Current: ${chainId}`, true);
             adminControls.classList.add('hidden');
-            if (adminEventTimerInterval) clearInterval(adminEventTimerInterval); 
+            if (adminEventTimerInterval) clearInterval(adminEventTimerInterval);
         } else {
             updateStatusMessage(adminMessage, `Successfully switched to BSC.`, false);
             if (selectedAdminAccount) {
@@ -810,12 +795,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (await checkAdminStatus(selectedAdminAccount)) {
                 fetchAdminDashboardData();
             } else {
-                connectWalletBtn.textContent = 'Connect Admin Wallet'; 
+                connectWalletBtn.textContent = 'Connect Admin Wallet';
             }
         } catch (err) {
             console.error("Admin auto-connect init failed:", err);
             adminMessage.textContent = "Auto-connect failed. Please connect wallet manually.";
-            connectWalletBtn.textContent = 'Connect Admin Wallet'; 
+            connectWalletBtn.textContent = 'Connect Admin Wallet';
         }
     }
 });
