@@ -181,6 +181,9 @@ async function checkAdminStatus(walletAddress) {
 
 async function fetchAdminDashboardData() {
     console.log("Attempting to fetch admin dashboard data from:", `${BACKEND_URL}/api/status`);
+    // Immediately clear previous error message to show loading state
+    updateStatusMessage(adminMessage, `Loading dashboard data...`, false);
+
     try {
         const response = await fetch(`${BACKEND_URL}/api/status`, {
             method: 'POST',
@@ -189,60 +192,64 @@ async function fetchAdminDashboardData() {
         });
 
         console.log("Raw response from /api/status:", response);
+        // Log response status and text for debugging
+        console.log(`Response Status: ${response.status}, Status Text: ${response.statusText}`);
+
+        if (!response.ok) { // Check if response status is not 2xx
+            const errorData = await response.json().catch(() => ({ message: 'No JSON response' }));
+            console.error("Response not OK for /api/status:", errorData);
+            updateStatusMessage(adminMessage, `Failed to load dashboard data: ${errorData.message || response.statusText || 'Unknown error'}. Status: ${response.status}`, true);
+            return null;
+        }
+
         const data = await response.json();
         console.log("Parsed data from /api/status:", data);
 
-        if (response.ok) {
-            const globalData = data.global;
+        const globalData = data.global;
 
-            updateStatusMessage(adminMessage, `Access Granted!`, false);
+        updateStatusMessage(adminMessage, `Access Granted!`, false);
 
-            totalConnectedWalletsDisplay.textContent = globalData.totalConnectedWallets || 0;
+        totalConnectedWalletsDisplay.textContent = globalData.totalConnectedWallets || 0;
 
-            const participantsTotalSlots = globalData.maxStakeSlots || 30000;
-            const stakedSlots = globalData.totalSlotsUsed || 0;
-            const percentage = (stakedSlots / participantsTotalSlots) * 100;
+        const participantsTotalSlots = globalData.maxStakeSlots || 30000;
+        const stakedSlots = globalData.totalSlotsUsed || 0;
+        const percentage = (stakedSlots / participantsTotalSlots) * 100;
 
-            adminParticipantsCountDisplay.textContent = `${stakedSlots}/${participantsTotalSlots}`;
-            adminParticipantsProgressBar.style.width = `${percentage}%`;
+        adminParticipantsCountDisplay.textContent = `${stakedSlots}/${participantsTotalSlots}`;
+        adminParticipantsProgressBar.style.width = `${percentage}%`;
 
-            if (globalData.eventEndTime) {
-                const isEventPaused = globalData.isPaused || false;
-                const eventStartTime = globalData.eventStartTime;
-                startAdminEventTimer(globalData.eventEndTime, isPaused, eventStartTime);
-            } else {
-                adminEventTimerDisplay.textContent = "No Event Set";
-                togglePauseBtn.disabled = true;
-                eventTimerLabel.textContent = "Event Status";
-            }
-
-            const withdrawalsPaused = globalData.withdrawalsPaused || false;
-            withdrawalsStatusDisplay.textContent = withdrawalsPaused ? "Paused" : "Active";
-            withdrawalsStatusDisplay.classList.toggle('text-red-500', withdrawalsPaused);
-            withdrawalsStatusDisplay.classList.toggle('text-highlight-green', !withdrawalsPaused);
-            toggleWithdrawalsPauseBtn.textContent = withdrawalsPaused ? "Resume All Withdrawals" : "Pause All Withdrawals";
-            toggleWithdrawalsPauseBtn.disabled = false;
-
-            currentStakingWalletDisplay.textContent = globalData.stakingRecipientAddress ?
-                `${globalData.stakingRecipientAddress.substring(0, 6)}...${globalData.stakingRecipientAddress.substring(globalData.stakingRecipientAddress.length - 4)}` : 'Not Set';
-
-            currentStakeAmountDisplay.textContent = (globalData.initialStakeAmountUSD || 0).toFixed(2);
-
-            currentMaxSlotsDisplay.textContent = globalData.maxStakeSlots || 0;
-
-            currentMaxAinRewardPoolDisplay.textContent = (globalData.maxAinRewardPool || 0).toFixed(0);
-            totalAinRewardedDisplay.textContent = (globalData.totalAinRewarded || 0).toFixed(4);
-
-            fetchUsersLeaderboard(leaderboardSortBy.value);
-            return data;
+        if (globalData.eventEndTime) {
+            const isEventPaused = globalData.isPaused || false;
+            const eventStartTime = globalData.eventStartTime;
+            startAdminEventTimer(globalData.eventEndTime, isPaused, eventStartTime);
         } else {
-            console.error("Response not OK for /api/status:", data.message || "Unknown reason.");
-            updateStatusMessage(adminMessage, `Failed to load dashboard data: ${data.message || 'Unknown error from backend status check'}`, true);
-            return null;
+            adminEventTimerDisplay.textContent = "No Event Set";
+            togglePauseBtn.disabled = true;
+            eventTimerLabel.textContent = "Event Status";
         }
+
+        const withdrawalsPaused = globalData.withdrawalsPaused || false;
+        withdrawalsStatusDisplay.textContent = withdrawalsPaused ? "Paused" : "Active";
+        withdrawalsStatusDisplay.classList.toggle('text-red-500', withdrawalsPaused);
+        withdrawalsStatusDisplay.classList.toggle('text-highlight-green', !withdrawalsPaused);
+        toggleWithdrawalsPauseBtn.textContent = withdrawalsPaused ? "Resume All Withdrawals" : "Pause All Withdrawals";
+        toggleWithdrawalsPauseBtn.disabled = false;
+
+        currentStakingWalletDisplay.textContent = globalData.stakingRecipientAddress ?
+            `${globalData.stakingRecipientAddress.substring(0, 6)}...${globalData.stakingRecipientAddress.substring(globalData.stakingRecipientAddress.length - 4)}` : 'Not Set';
+
+        currentStakeAmountDisplay.textContent = (globalData.initialStakeAmountUSD || 0).toFixed(2);
+
+        currentMaxSlotsDisplay.textContent = globalData.maxStakeSlots || 0;
+
+        currentMaxAinRewardPoolDisplay.textContent = (globalData.maxAinRewardPool || 0).toFixed(0);
+        totalAinRewardedDisplay.textContent = (globalData.totalAinRewarded || 0).toFixed(4);
+
+        fetchUsersLeaderboard(leaderboardSortBy.value);
+        return data;
     } catch (error) {
         console.error("Network or parsing error fetching admin dashboard data:", error);
-        updateStatusMessage(adminMessage, `Network error loading admin dashboard data. Please ensure backend is running and URL in admin.js is correct.`, true);
+        updateStatusMessage(adminMessage, `Network error loading admin dashboard data. Please ensure backend is running and URL in admin.js is correct. Error: ${error.message}`, true);
         return null;
     }
 }
@@ -693,7 +700,7 @@ const switchToBSC = async () => {
     }
 };
 
-           // --- Event Listeners ---
+// --- Event Listeners ---
 connectWalletBtn.addEventListener('click', () => {
     walletModal.classList.remove('hidden');
     walletStatus.classList.add('hidden');
