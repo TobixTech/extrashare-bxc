@@ -13,7 +13,7 @@ const BXC_ACCRUAL_PER_SECOND = 0.001;
 
 let web3; // Will hold the Web3 instance
 let selectedAccount = null;
-let participantsTotalSlots = 0; // Default, will be updated by backend
+let participantsTotalSlots = 30000; // Default, will be updated by backend
 let eventEndTime = null; // Will store the timestamp when the event ends
 let bxcAccrualInterval = null; // To hold the interval for BXC accrual
 let mainEventTimerInterval = null; // Global for the main dApp timer
@@ -560,11 +560,21 @@ const connectWallet = async (walletName, provider) => {
         const accounts = await web3.eth.requestAccounts();
         selectedAccount = accounts[0];
         console.log(`Connected with ${walletName}:`, selectedAccount);
+        
+        // Update the main connect button text to show connected address and green background
+        connectWalletBtn.textContent = `Connected: ${selectedAccount.substring(0, 6)}...${selectedAccount.substring(selectedAccount.length - 4)}`;
+        connectWalletBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+        connectWalletBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+
         updateStatusMessage(walletStatus, `Connected: ${selectedAccount.substring(0, 6)}...${selectedAccount.substring(selectedAccount.length - 4)}`, false);
 
         const chainSwitched = await switchToBSC();
         if (!chainSwitched) {
             updateStatusMessage(walletStatus, `Please switch to BNB Smart Chain (Chain ID 56) manually.`, true);
+            // Revert button color if chain switch fails
+            connectWalletBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            connectWalletBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            connectWalletBtn.textContent = 'Connect Wallet'; // Reset text
             return false;
         }
 
@@ -576,6 +586,10 @@ const connectWallet = async (walletName, provider) => {
     } catch (error) {
         console.error(`Error connecting to ${walletName}:`, error);
         updateStatusMessage(walletStatus, `Connection failed for ${walletName}. ${error.message}`, true);
+        // Ensure button reverts to original state on failure
+        connectWalletBtn.textContent = 'Connect Wallet';
+        connectWalletBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+        connectWalletBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
         return false;
     }
 };
@@ -710,9 +724,17 @@ if (window.ethereum) {
             updateDashboardUI({});
             if (bxcAccrualInterval) clearInterval(bxcAccrualInterval);
             if (mainEventTimerInterval) clearInterval(mainEventTimerInterval);
+            // Reset connect button
+            connectWalletBtn.textContent = 'Connect Wallet';
+            connectWalletBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            connectWalletBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
         } else {
             selectedAccount = accounts[0];
             console.log('Account changed to:', selectedAccount);
+            // Update connect button
+            connectWalletBtn.textContent = `Connected: ${selectedAccount.substring(0, 6)}...${selectedAccount.substring(selectedAccount.length - 4)}`;
+            connectWalletBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            connectWalletBtn.classList.add('bg-green-600', 'hover:bg-green-700');
             fetchStatus(selectedAccount);
         }
     });
@@ -724,6 +746,10 @@ if (window.ethereum) {
             updateStatusMessage(stakeStatus, `Please switch to BNB Smart Chain (Chain ID 56). Current: ${chainId}`, true);
             if (bxcAccrualInterval) clearInterval(bxcAccrualInterval);
             if (mainEventTimerInterval) clearInterval(mainEventTimerInterval);
+            // Reset connect button
+            connectWalletBtn.textContent = 'Connect Wallet';
+            connectWalletBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            connectWalletBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
         } else {
             updateStatusMessage(stakeStatus, `Successfully switched to BSC.`, false);
             if (selectedAccount) {
@@ -739,10 +765,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.ethereum && window.ethereum.selectedAddress) {
         selectedAccount = window.ethereum.selectedAddress;
         initializeWeb3(window.ethereum).then(() => {
+            // Update connect button on auto-connect
+            connectWalletBtn.textContent = `Connected: ${selectedAccount.substring(0, 6)}...${selectedAccount.substring(selectedAccount.length - 4)}`;
+            connectWalletBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            connectWalletBtn.classList.add('bg-green-600', 'hover:bg-green-700');
             fetchStatus(selectedAccount);
         }).catch(err => {
             console.error("Auto-connect initialization failed:", err);
             updateStatusMessage(stakeStatus, "Auto-connect failed. Please connect wallet manually.", true);
+            // Reset connect button on auto-connect failure
+            connectWalletBtn.textContent = 'Connect Wallet';
+            connectWalletBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            connectWalletBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
         });
     } else {
         fetchStatus();
