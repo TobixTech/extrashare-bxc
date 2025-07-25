@@ -273,7 +273,7 @@ async function handleTogglePause() {
 
         if (response.ok) {
             updateStatusMessage(togglePauseStatus, data.message, false);
-            window.location.reload(true); 
+            
         } else {
             updateStatusMessage(togglePauseStatus, `Failed to toggle: ${data.message}`, true);
             togglePauseBtn.disabled = false; 
@@ -311,7 +311,7 @@ async function handleSetEventDuration() {
         if (response.ok) {
             updateStatusMessage(setEventDurationStatus, data.message, false);
             newEventDurationInput.value = ''; 
-            window.location.reload(true); 
+            
         } else {
             updateStatusMessage(setEventDurationStatus, `Failed to set event duration: ${data.message}`, true);
             setEventDurationBtn.disabled = false; 
@@ -349,7 +349,7 @@ async function handleSetStakingWalletAddress() {
         if (response.ok) {
             updateStatusMessage(setStakingWalletStatus, data.message, false);
             newStakingWalletAddressInput.value = ''; 
-            window.location.reload(true); 
+            
         } else {
             updateStatusMessage(setStakingWalletStatus, `Failed to set address: ${data.message}`, true);
             setStakingWalletBtn.disabled = false; 
@@ -387,7 +387,7 @@ async function handleSetStakeAmount() {
         if (response.ok) {
             updateStatusMessage(setStakeAmountStatus, data.message, false);
             newStakeAmountInput.value = ''; 
-            window.location.reload(true); 
+            
         } else {
             updateStatusMessage(setStakeAmountStatus, `Failed to set amount: ${data.message}`, true);
             setStakeAmountBtn.disabled = false; 
@@ -425,7 +425,7 @@ async function handleSetMaxSlots() {
         if (response.ok) {
             updateStatusMessage(setMaxSlotsStatus, data.message, false);
             newMaxSlotsInput.value = ''; 
-            window.location.reload(true); 
+             
         } else {
             updateStatusMessage(setMaxSlotsStatus, `Failed to set max slots: ${data.message}`, true);
             setMaxSlotsBtn.disabled = false; 
@@ -463,7 +463,7 @@ async function handleSetMaxAinRewardPool() {
         if (response.ok) {
             updateStatusMessage(setMaxAinRewardPoolStatus, data.message, false);
             maxAinRewardPoolInput.value = ''; 
-            window.location.reload(true); 
+            
         } else {
             updateStatusMessage(setMaxAinRewardPoolStatus, `Failed to set AIN pool: ${data.message}`, true);
             setMaxAinRewardPoolBtn.disabled = false; 
@@ -494,7 +494,7 @@ async function handleToggleWithdrawalsPause() {
 
         if (response.ok) {
             updateStatusMessage(toggleWithdrawalsStatus, data.message, false);
-            window.location.reload(true); 
+             
         } else {
             updateStatusMessage(toggleWithdrawalsStatus, `Failed to toggle: ${data.message}`, true);
             toggleWithdrawalsPauseBtn.disabled = false; 
@@ -546,7 +546,7 @@ async function handleFundUser() {
             updateStatusMessage(fundUserStatus, data.message, false);
             fundUserWalletInput.value = '';
             fundAmountInput.value = '';
-            window.location.reload(true); 
+            
         } else {
             updateStatusMessage(fundUserStatus, `Failed to fund user: ${data.message}`, true);
             fundUserBtn.disabled = false; 
