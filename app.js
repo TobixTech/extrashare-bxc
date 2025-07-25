@@ -219,14 +219,17 @@ async function fetchStatus(walletAddress = null) {
 }
 
 async function handleStake() {
+    console.log("Stake button clicked - handleStake function entered."); // ADDED THIS LOG
+
     if (!selectedAccount) {
         updateStatusMessage(stakeStatus, "Please connect your wallet first.", true);
+        console.log("selectedAccount is null. Exiting handleStake."); // ADDED THIS LOG
         return;
     }
     updateStatusMessage(stakeStatus, "Initiating stake transaction...", false);
+    console.log("selectedAccount is NOT null. Proceeding to fetch status."); // ADDED THIS LOG
 
     try {
-        // Fetch current global state to get dynamic stake amount and recipient address
         const statusResponse = await fetch(`${BACKEND_URL}/api/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -236,47 +239,55 @@ async function handleStake() {
 
         if (!statusResponse.ok || !statusData.global) {
             updateStatusMessage(stakeStatus, `Failed to get current staking details: ${statusData.message || 'Error'}`, true);
+            console.log("Failed to get current staking details. Exiting handleStake."); // ADDED THIS LOG
             return;
         }
 
-        // Use dynamic values from backend's global state
         const currentInitialStakeAmount = statusData.global.initialStakeAmountUSD || 8;
-        const stakeRecipientAddress = statusData.global.stakingRecipientAddress || '0xYourDefaultStakeRecipientAddressHere'; // Fallback if admin hasn't set it in DB
+        const stakeRecipientAddress = statusData.global.stakingRecipientAddress || '0xYourDefaultStakeRecipientAddressHere'; 
 
-        // If the staking address is still the default placeholder or invalid, warn and stop
         if (stakeRecipientAddress === '0xYourDefaultStakeRecipientAddressHere' || !/^0x[a-fA-F0-9]{40}$/.test(stakeRecipientAddress)) {
              updateStatusMessage(stakeStatus, "Staking recipient address is not properly configured by admin.", true);
+             console.log("Staking recipient address invalid. Exiting handleStake."); // ADDED THIS LOG
              return;
         }
-
 
         const responsePrice = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd');
         const priceData = await responsePrice.json();
         const bnbPriceUsd = priceData.binancecoin.usd;
-
-        // Use currentInitialStakeAmount from backend
-        const amountUsd = currentInitialStakeAmount;
+        
+        const amountUsd = currentInitialStakeAmount; 
         const amountBnb = amountUsd / bnbPriceUsd;
-        const amountWei = web3.utils.toWei(amountBnb.toFixed(18), 'ether'); // Ensure enough decimals for BNB
+        const amountWei = web3.utils.toWei(amountBnb.toFixed(18), 'ether');
 
+        // --- IMPORTANT CHANGE HERE: Using ethereum.request directly ---
         const transactionParameters = {
-            to: stakeRecipientAddress, // Use dynamic address
+            to: stakeRecipientAddress,
             from: selectedAccount,
-            value: amountWei,
-            chainId: BSC_CHAIN_ID,
+            value: web3.utils.toHex(amountWei), // Convert to hex string for RPC call
+            chainId: BSC_CHAIN_ID, // Ensure chainId is correctly set
         };
 
-        const txHash = await web3.eth.sendTransaction(transactionParameters);
-        console.log("BNB Transaction successful:", txHash);
-        updateStatusMessage(stakeStatus, `Stake transaction sent! TxHash: ${txHash.transactionHash}`, false);
+        console.log("Attempting to send transaction with parameters (using ethereum.request):", transactionParameters);
+
+        // Using ethereum.request directly as it often has better wallet compatibility
+        // This is the common way for EIP-1193 providers
+        const txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [transactionParameters],
+        });
+        
+        // Note: The above returns the transaction hash directly, not an object like web3.eth.sendTransaction
+        console.log("BNB Transaction successful, TxHash:", txHash);
+        updateStatusMessage(stakeStatus, `Stake transaction sent! TxHash: ${txHash}`, false);
 
         const response = await fetch(`${BACKEND_URL}/api/stake`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 walletAddress: selectedAccount,
-                amountUSD: amountUsd, // Send the USD amount staked
-                transactionHash: txHash.transactionHash
+                amountUSD: amountUsd,
+                transactionHash: txHash // Pass the raw hash
             })
         });
         const data = await response.json();
@@ -287,8 +298,17 @@ async function handleStake() {
             updateStatusMessage(stakeStatus, `Staking failed: ${data.message}`, true);
         }
     } catch (error) {
-        console.error("Stake transaction error:", error);
-        updateStatusMessage(stakeStatus, `Stake transaction failed: ${error.message}`, true);
+        console.error("Stake transaction failed in handleStake() catch block:", error);
+        if (error.code === 4001) {
+            updateStatusMessage(stakeStatus, "Transaction rejected by wallet.", true);
+        } else if (error.message && error.message.includes("insufficient funds")) {
+            updateStatusMessage(stakeStatus, "Insufficient BNB for gas fees.", true);
+        } else if (error.code === -32603) { // Generic RPC error, often "User denied transaction signature"
+            updateStatusMessage(stakeStatus, `Wallet error: ${error.message || 'Check your wallet for details.'}`, true);
+        }
+        else {
+            updateStatusMessage(stakeStatus, `Stake transaction failed: ${error.message || 'Unknown error'}. Please check your wallet.`, true);
+        }
     }
 }
 
@@ -447,7 +467,7 @@ async function handleCollectReward() {
 async function handleWithdrawPartneredCoin() {
     if (!selectedAccount) return updateStatusMessage(partneredCoinStatus, "Wallet not connected.", true);
     updateStatusMessage(partneredCoinStatus, "Requesting AIN withdrawal...", false);
-
+    
     try {
         const response = await fetch(`${BACKEND_URL}/api/withdrawAIN`, {
             method: 'POST',
@@ -476,7 +496,7 @@ async function handleCopyReferralCode() {
         try {
             await navigator.clipboard.writeText(referralCode);
             updateStatusMessage(stakeStatus, "Referral code copied!", false);
-
+            
             await fetch(`${BACKEND_URL}/api/referral-copied`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -498,7 +518,7 @@ async function handleCopyReferralLink() {
         try {
             await navigator.clipboard.writeText(referralLink);
             updateStatusMessage(stakeStatus, "Referral link copied!", false);
-
+            
             await fetch(`${BACKEND_URL}/api/referral-copied`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -579,7 +599,7 @@ const connectWallet = async (walletName, provider) => {
         }
 
         walletModal.classList.add('hidden');
-        console.log("Wallet connected and on BSC. Fetching status...");
+        console.log("Wallet connected and on BSC. Fetching status..."); 
         fetchStatus(selectedAccount);
         return true;
 
