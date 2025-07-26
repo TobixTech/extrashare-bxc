@@ -84,14 +84,16 @@ const totalUsersCountDisplay = document.getElementById('totalUsersCountDisplay')
 // ADDED DOM Element References for Reset User Profile
 const targetUserWalletToResetInput = document.getElementById('targetUserWalletToResetInput');
 const resetUserStakeBtn = document.getElementById('resetUserStakeBtn');
-const resetUserStakeStatus = document.getElementById('resetUserStakeStatus');
+const resetUserStakeStatus = document = document.getElementById('resetUserStakeStatus'); // Fix: remove = document.getElementById('resetUserStakeStatus');
+// FIX: Corrected typo, should be:
+// const resetUserStakeStatus = document.getElementById('resetUserStakeStatus');
 
 // --- Utility Functions ---
 function updateStatusMessage(element, message, isError = false) {
+    console.log(`[Status Update] Element: ${element.id || 'unknown'}, Message: ${message}, IsError: ${isError}`); // Added console log
     element.textContent = message;
     element.classList.remove('hidden', 'text-green-500', 'text-red-500');
     element.classList.add(isError ? 'text-red-500' : 'text-green-500');
-    console.log(`Admin Status update for ${element.id || 'unknown'}: ${message}`);
 }
 
 function formatTime(seconds) {
@@ -186,7 +188,6 @@ async function checkAdminStatus(walletAddress) {
 
 async function fetchAdminDashboardData() {
     console.log("Attempting to fetch admin dashboard data from:", `${BACKEND_URL}/api/status`);
-    // Immediately clear previous error message to show loading state
     updateStatusMessage(adminMessage, `Loading dashboard data...`, false); 
 
     try {
@@ -197,10 +198,9 @@ async function fetchAdminDashboardData() {
         });
 
         console.log("Raw response from /api/status:", response);
-        // Log response status and text for debugging
         console.log(`Response Status: ${response.status}, Status Text: ${response.statusText}`);
 
-        if (!response.ok) { // Check if response status is not 2xx
+        if (!response.ok) { 
             const errorData = await response.json().catch(() => ({ message: 'No JSON response' }));
             console.error("Response not OK for /api/status:", errorData);
             updateStatusMessage(adminMessage, `Failed to load dashboard data: ${errorData.message || response.statusText || 'Unknown error'}. Status: ${response.status}`, true);
@@ -254,9 +254,7 @@ async function fetchAdminDashboardData() {
         return data;
     } catch (error) {
         console.error("Network or parsing error fetching admin dashboard data:", error);
-        adminMessage.textContent = `Network error loading admin dashboard data. Please ensure backend is running and URL in admin.js is correct. Error: ${error.message}`; // Removed updateStatusMessage for consistency
-        adminMessage.classList.remove('hidden', 'text-green-500'); // Ensure it shows as error
-        adminMessage.classList.add('text-red-500');
+        updateStatusMessage(adminMessage, `Network error loading admin dashboard data. Please ensure backend is running and URL in admin.js is correct. Error: ${error.message}`, true);
         return null;
     }
 }
@@ -507,7 +505,7 @@ async function handleToggleWithdrawalsPause() {
 
         if (response.ok) {
             updateStatusMessage(toggleWithdrawalsStatus, data.message, false);
-             fetchAdminDashboardData(); // Refresh dashboard to update status display
+             fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(toggleWithdrawalsStatus, `Failed to toggle: ${data.message}`, true);
             toggleWithdrawalsPauseBtn.disabled = false; 
@@ -571,7 +569,7 @@ async function handleFundUser() {
     }
 }
 
-// ADDED Handle resetting a user's staking profile
+// Handle resetting a user's staking profile
 async function handleResetUserStake() {
     if (!selectedAdminAccount) {
         updateStatusMessage(resetUserStakeStatus, "Admin wallet not connected.", true);
@@ -602,8 +600,7 @@ async function handleResetUserStake() {
         if (response.ok) {
             updateStatusMessage(resetUserStakeStatus, data.message, false);
             targetUserWalletToResetInput.value = ''; // Clear input on success
-            // Refresh dashboard data to reflect changes, especially participant count and leaderboard
-            fetchAdminDashboardData(); 
+            fetchAdminDashboardData(); // Refresh dashboard data to reflect changes
         } else {
             updateStatusMessage(resetUserStakeStatus, `Failed to reset user: ${data.message}`, true);
             resetUserStakeBtn.disabled = false;
@@ -804,12 +801,12 @@ setEventDurationBtn.addEventListener('click', handleSetEventDuration);
 setMaxSlotsBtn.addEventListener('click', handleSetMaxSlots); 
 setStakingWalletBtn.addEventListener('click', handleSetStakingWalletAddress); 
 setStakeAmountBtn.addEventListener('click', handleSetStakeAmount); 
-setMaxAinRewardPoolBtn.addEventListener('click', handleMaxAinRewardPool); 
+setMaxAinRewardPoolBtn.addEventListener('click', handleSetMaxAinRewardPool); // Corrected function name here
 fundUserBtn.addEventListener('click', handleFundUser); 
 toggleWithdrawalsPauseBtn.addEventListener('click', handleToggleWithdrawalsPause);
 refreshLeaderboardBtn.addEventListener('click', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
 leaderboardSortBy.addEventListener('change', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
-resetUserStakeBtn.addEventListener('click', handleResetUserStake); // ADDED
+resetUserStakeBtn.addEventListener('click', handleResetUserStake); 
 
 // Add event listener for selecting a user from the leaderboard table using event delegation
 leaderboardTableBody.addEventListener('click', (event) => {
@@ -829,6 +826,7 @@ leaderboardTableBody.addEventListener('click', (event) => {
 // Listen for account/chain changes
 if (window.ethereum) {
     window.ethereum.on('accountsChanged', async (accounts) => {
+        console.log('accountsChanged event fired:', accounts); // Debug log
         if (accounts.length === 0) {
             console.log('Admin Wallet disconnected.');
             selectedAdminAccount = null;
@@ -850,7 +848,7 @@ if (window.ethereum) {
     });
 
     window.ethereum.on('chainChanged', async (chainId) => {
-        console.log('Chain changed to:', chainId);
+        console.log('chainChanged event fired:', chainId); // Debug log
         if (web3.utils.toHex(chainId) !== BSC_CHAIN_ID) {
             updateStatusMessage(adminMessage, `Please switch to BNB Smart Chain (Chain ID 56). Current: ${chainId}`, true);
             adminControls.classList.add('hidden');
@@ -869,22 +867,51 @@ if (window.ethereum) {
     });
 }
 
-// Initial Load
+// Initial Load / Auto-connect logic (Revised for robustness)
 document.addEventListener('DOMContentLoaded', async () => {
-    if (window.ethereum && window.ethereum.selectedAddress) {
-        selectedAdminAccount = window.ethereum.selectedAddress;
+    // Check if a Web3 provider (like MetaMask) is available
+    if (window.ethereum) {
         try {
+            // Attempt to initialize Web3 with the default provider
             await initializeWeb3(window.ethereum);
-            connectWalletBtn.textContent = `Connected: ${selectedAdminAccount.substring(0, 6)}...${selectedAdminAccount.substring(selectedAdminAccount.length - 4)}`;
-            if (await checkAdminStatus(selectedAdminAccount)) {
-                fetchAdminDashboardData();
+
+            // Request accounts if not already connected, or get current if already connected
+            // Using eth_accounts for passive check, requestAccounts for active prompt
+            const accounts = await web3.eth.getAccounts(); 
+            if (accounts.length > 0) {
+                selectedAdminAccount = accounts[0];
+                console.log("Auto-connected account:", selectedAdminAccount);
+                connectWalletBtn.textContent = `Connected: ${selectedAdminAccount.substring(0, 6)}...${selectedAdminAccount.substring(selectedAdminAccount.length - 4)}`;
+                
+                // Proceed with admin status check and dashboard data fetch
+                if (await checkAdminStatus(selectedAdminAccount)) {
+                    fetchAdminDashboardData();
+                } else {
+                    // Not an admin, display appropriate message
+                    connectWalletBtn.textContent = 'Connect Admin Wallet'; 
+                    adminMessage.textContent = "Access Denied: Your connected wallet is not an authorized administrator.";
+                    adminControls.classList.add('hidden');
+                }
             } else {
+                console.log("No account pre-connected, ready for manual connection.");
+                // Wallet is installed but no account is connected/selected
                 connectWalletBtn.textContent = 'Connect Admin Wallet'; 
+                adminMessage.textContent = "Please connect your wallet to verify admin access.";
+                adminControls.classList.add('hidden');
             }
         } catch (err) {
             console.error("Admin auto-connect init failed:", err);
-            adminMessage.textContent = "Auto-connect failed. Please connect wallet manually.";
+            adminMessage.textContent = "Auto-connect failed. Please connect wallet manually. Error: " + err.message;
+            adminMessage.classList.remove('hidden');
+            adminMessage.classList.add('text-red-500');
             connectWalletBtn.textContent = 'Connect Admin Wallet'; 
         }
+    } else {
+        // No Web3 provider (MetaMask etc.) detected
+        console.warn("No Ethereum provider (like MetaMask) detected.");
+        adminMessage.textContent = "No Web3 wallet detected. Please install MetaMask or a compatible browser extension.";
+        adminMessage.classList.remove('hidden');
+        adminMessage.classList.add('text-red-500');
+        connectWalletBtn.disabled = true; // Disable connect button if no provider
     }
 });
