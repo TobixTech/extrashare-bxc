@@ -111,28 +111,44 @@
                         </div>
                     </div>
 
+                    {/* UPDATED SECTION FOR FUND USER WALLET */}
                     <div class="bg-white p-4 sm:p-5 rounded-md shadow-inner border border-gray-100 col-span-1 md:col-span-2">
                         <h3 class="text-xl font-semibold text-gray-700 mb-3">Fund User Wallet (BXC / AIN)</h3>
-                        <input type="text" id="fundUserWalletInput" placeholder="User Wallet Address (0x...)" class="w-full p-2 rounded-md bg-gray-100 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 mb-2">
-                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-2">
-                            <input type="number" id="fundAmountInput" step="0.0001" placeholder="Amount" class="flex-grow p-2 rounded-md bg-gray-100 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500">
-                            <select id="fundTokenTypeSelect" class="p-2 rounded-md bg-gray-100 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500">
-                                <option value="BXC">BXC</option>
-                                <option value="AIN">AIN</option>
-                            </select>
+                        <select id="fundUserOptionSelect" class="w-full p-2 rounded-md bg-gray-100 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 mb-2">
+                            <option value="selected">Selected User</option>
+                            <option value="all">All Users (Not Recommended for Funding)</option>
+                        </select>
+                        <div id="selectedUserFundInputContainer" class="space-y-2">
+                            <input type="text" id="fundUserWalletInput" placeholder="User Wallet Address (0x...)" class="w-full p-2 rounded-md bg-gray-100 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                                <input type="number" id="fundAmountInput" step="0.0001" placeholder="Amount" class="flex-grow p-2 rounded-md bg-gray-100 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                <select id="fundTokenTypeSelect" class="p-2 rounded-md bg-gray-100 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    <option value="BXC">BXC</option>
+                                    <option value="AIN">AIN</option>
+                                </select>
+                            </div>
                         </div>
-                        <button id="fundUserBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                            Fund User
+                        <p id="fundUserOptionMessage" class="text-sm text-gray-600 mt-2 hidden">Select 'Selected User' to enable input fields.</p>
+                        <button id="fundUserBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md mt-2 transition duration-300">
+                            Fund Selected User
                         </button>
                         <p id="fundUserStatus" class="text-sm mt-2 text-red-500 hidden"></p>
                     </div>
 
+                    {/* UPDATED SECTION FOR RESET USER PROFILE */}
                     <div class="bg-white p-4 sm:p-5 rounded-md shadow-inner border border-gray-100 col-span-1 md:col-span-2">
                         <h3 class="text-xl font-semibold text-gray-700 mb-3">Reset User Staking Profile</h3>
                         <p class="text-sm text-gray-500 mb-2">Resets a user's staking status, making them eligible to stake again.</p>
-                        <input type="text" id="targetUserWalletToResetInput" placeholder="User Wallet Address (0x...)" class="w-full p-2 rounded-md bg-gray-100 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500 mb-2">
-                        <button id="resetUserStakeBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                            Reset User's Stake
+                        <select id="resetUserOptionSelect" class="w-full p-2 rounded-md bg-gray-100 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500 mb-2">
+                            <option value="selected">Selected User</option>
+                            <option value="all">All Users</option>
+                        </select>
+                        <div id="selectedUserResetInputContainer" class="space-y-2">
+                            <input type="text" id="targetUserWalletToResetInput" placeholder="User Wallet Address (0x...)" class="w-full p-2 rounded-md bg-gray-100 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        </div>
+                        <p id="resetUserOptionMessage" class="text-sm text-gray-600 mt-2 hidden">Select 'Selected User' to enable input fields.</p>
+                        <button id="resetUserStakeBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md mt-2 transition duration-300">
+                            Reset Selected User
                         </button>
                         <p id="resetUserStakeStatus" class="text-sm mt-2 text-red-500 hidden"></p>
                     </div>
