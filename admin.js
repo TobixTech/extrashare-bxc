@@ -254,7 +254,9 @@ async function fetchAdminDashboardData() {
         return data;
     } catch (error) {
         console.error("Network or parsing error fetching admin dashboard data:", error);
-        updateStatusMessage(adminMessage, `Network error loading admin dashboard data. Please ensure backend is running and URL in admin.js is correct. Error: ${error.message}`, true);
+        adminMessage.textContent = `Network error loading admin dashboard data. Please ensure backend is running and URL in admin.js is correct. Error: ${error.message}`; // Removed updateStatusMessage for consistency
+        adminMessage.classList.remove('hidden', 'text-green-500'); // Ensure it shows as error
+        adminMessage.classList.add('text-red-500');
         return null;
     }
 }
@@ -278,7 +280,7 @@ async function handleTogglePause() {
 
         if (response.ok) {
             updateStatusMessage(togglePauseStatus, data.message, false);
-            // Re-fetch dashboard data to update timer and status
+            
             fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(togglePauseStatus, `Failed to toggle: ${data.message}`, true);
@@ -317,7 +319,8 @@ async function handleSetEventDuration() {
         if (response.ok) {
             updateStatusMessage(setEventDurationStatus, data.message, false);
             newEventDurationInput.value = ''; 
-            fetchAdminDashboardData(); // Refresh dashboard data to update timer
+            
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(setEventDurationStatus, `Failed to set event duration: ${data.message}`, true);
             setEventDurationBtn.disabled = false; 
@@ -355,7 +358,8 @@ async function handleSetStakingWalletAddress() {
         if (response.ok) {
             updateStatusMessage(setStakingWalletStatus, data.message, false);
             newStakingWalletAddressInput.value = ''; 
-            fetchAdminDashboardData(); // Refresh dashboard data to update display
+            
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(setStakingWalletStatus, `Failed to set address: ${data.message}`, true);
             setStakingWalletBtn.disabled = false; 
@@ -393,7 +397,8 @@ async function handleSetStakeAmount() {
         if (response.ok) {
             updateStatusMessage(setStakeAmountStatus, data.message, false);
             newStakeAmountInput.value = ''; 
-            fetchAdminDashboardData(); // Refresh dashboard data to update display
+            
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(setStakeAmountStatus, `Failed to set amount: ${data.message}`, true);
             setStakeAmountBtn.disabled = false; 
@@ -431,7 +436,8 @@ async function handleSetMaxSlots() {
         if (response.ok) {
             updateStatusMessage(setMaxSlotsStatus, data.message, false);
             newMaxSlotsInput.value = ''; 
-            fetchAdminDashboardData(); // Refresh dashboard data to update display
+             
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(setMaxSlotsStatus, `Failed to set max slots: ${data.message}`, true);
             setMaxSlotsBtn.disabled = false; 
@@ -469,7 +475,8 @@ async function handleSetMaxAinRewardPool() {
         if (response.ok) {
             updateStatusMessage(setMaxAinRewardPoolStatus, data.message, false);
             maxAinRewardPoolInput.value = ''; 
-            fetchAdminDashboardData(); // Refresh dashboard data to update display
+            
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(setMaxAinRewardPoolStatus, `Failed to set AIN pool: ${data.message}`, true);
             setMaxAinRewardPoolBtn.disabled = false; 
@@ -500,7 +507,7 @@ async function handleToggleWithdrawalsPause() {
 
         if (response.ok) {
             updateStatusMessage(toggleWithdrawalsStatus, data.message, false);
-            fetchAdminDashboardData(); // Refresh dashboard to update status display
+             fetchAdminDashboardData(); // Refresh dashboard to update status display
         } else {
             updateStatusMessage(toggleWithdrawalsStatus, `Failed to toggle: ${data.message}`, true);
             toggleWithdrawalsPauseBtn.disabled = false; 
@@ -645,7 +652,7 @@ async function fetchUsersLeaderboard(sortBy = 'referralCount') {
                             <td class="py-2 px-3">${(user.AIN_Balance || 0).toFixed(4)}</td>
                             <td class="py-2 px-3">$${(user.stakedUSDValue || 0).toFixed(2)}</td>
                             <td class="py-2 px-3">${createdAtDate}</td>
-                            <td class="py-2 px-3"> {/* NEW COLUMN FOR ACTIONS */}
+                            <td class="py-2 px-3">
                                 <button class="select-user-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded" data-wallet="${user.walletAddress}">Select</button>
                             </td>
                         </tr>
@@ -797,7 +804,7 @@ setEventDurationBtn.addEventListener('click', handleSetEventDuration);
 setMaxSlotsBtn.addEventListener('click', handleSetMaxSlots); 
 setStakingWalletBtn.addEventListener('click', handleSetStakingWalletAddress); 
 setStakeAmountBtn.addEventListener('click', handleSetStakeAmount); 
-setMaxAinRewardPoolBtn.addEventListener('click', handleSetMaxAinRewardPool); 
+setMaxAinRewardPoolBtn.addEventListener('click', handleMaxAinRewardPool); 
 fundUserBtn.addEventListener('click', handleFundUser); 
 toggleWithdrawalsPauseBtn.addEventListener('click', handleToggleWithdrawalsPause);
 refreshLeaderboardBtn.addEventListener('click', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
