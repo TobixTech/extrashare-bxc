@@ -81,11 +81,10 @@ const leaderboardTableBody = document.getElementById('leaderboardTableBody');
 const leaderboardStatus = document.getElementById('leaderboardStatus');
 const totalUsersCountDisplay = document.getElementById('totalUsersCountDisplay'); 
 
-// Admin Specific UI Elements (continued)
+// ADDED DOM Element References for Reset User Profile
 const targetUserWalletToResetInput = document.getElementById('targetUserWalletToResetInput');
 const resetUserStakeBtn = document.getElementById('resetUserStakeBtn');
 const resetUserStakeStatus = document.getElementById('resetUserStakeStatus');
-
 
 // --- Utility Functions ---
 function updateStatusMessage(element, message, isError = false) {
@@ -279,7 +278,8 @@ async function handleTogglePause() {
 
         if (response.ok) {
             updateStatusMessage(togglePauseStatus, data.message, false);
-            
+            // Re-fetch dashboard data to update timer and status
+            fetchAdminDashboardData(); 
         } else {
             updateStatusMessage(togglePauseStatus, `Failed to toggle: ${data.message}`, true);
             togglePauseBtn.disabled = false; 
@@ -290,53 +290,6 @@ async function handleTogglePause() {
         togglePauseBtn.disabled = false; 
     }
 }
-
-// --- Admin API Interactions (continued) ---
-
-// Handle resetting a user's staking profile
-async function handleResetUserStake() {
-    if (!selectedAdminAccount) {
-        updateStatusMessage(resetUserStakeStatus, "Admin wallet not connected.", true);
-        return;
-    }
-
-    const targetWalletAddress = targetUserWalletToResetInput.value.trim();
-
-    if (!targetWalletAddress || !/^0x[a-fA-F0-9]{40}$/.test(targetWalletAddress)) {
-        updateStatusMessage(resetUserStakeStatus, "Please enter a valid user wallet address (0x...).", true);
-        return;
-    }
-
-    resetUserStakeBtn.disabled = true;
-    updateStatusMessage(resetUserStakeStatus, `Resetting staking profile for ${targetWalletAddress}...`, false);
-
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/admin/reset-user-profile`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                adminWalletAddress: selectedAdminAccount,
-                targetWalletAddress: targetWalletAddress
-            })
-        });
-        const data = await response.json();
-
-        if (response.ok) {
-            updateStatusMessage(resetUserStakeStatus, data.message, false);
-            targetUserWalletToResetInput.value = ''; // Clear input on success
-            // Refresh dashboard data to reflect changes, especially participant count
-            fetchAdminDashboardData();
-        } else {
-            updateStatusMessage(resetUserStakeStatus, `Failed to reset user: ${data.message}`, true);
-            resetUserStakeBtn.disabled = false;
-        }
-    } catch (error) {
-        console.error("Error resetting user profile:", error);
-        updateStatusMessage(resetUserStakeStatus, `Network error resetting user.`, true);
-        resetUserStakeBtn.disabled = false;
-    }
-}
-
 
 // Handle setting new event duration
 async function handleSetEventDuration() { 
@@ -364,7 +317,7 @@ async function handleSetEventDuration() {
         if (response.ok) {
             updateStatusMessage(setEventDurationStatus, data.message, false);
             newEventDurationInput.value = ''; 
-            
+            fetchAdminDashboardData(); // Refresh dashboard data to update timer
         } else {
             updateStatusMessage(setEventDurationStatus, `Failed to set event duration: ${data.message}`, true);
             setEventDurationBtn.disabled = false; 
@@ -402,7 +355,7 @@ async function handleSetStakingWalletAddress() {
         if (response.ok) {
             updateStatusMessage(setStakingWalletStatus, data.message, false);
             newStakingWalletAddressInput.value = ''; 
-            
+            fetchAdminDashboardData(); // Refresh dashboard data to update display
         } else {
             updateStatusMessage(setStakingWalletStatus, `Failed to set address: ${data.message}`, true);
             setStakingWalletBtn.disabled = false; 
@@ -440,7 +393,7 @@ async function handleSetStakeAmount() {
         if (response.ok) {
             updateStatusMessage(setStakeAmountStatus, data.message, false);
             newStakeAmountInput.value = ''; 
-            
+            fetchAdminDashboardData(); // Refresh dashboard data to update display
         } else {
             updateStatusMessage(setStakeAmountStatus, `Failed to set amount: ${data.message}`, true);
             setStakeAmountBtn.disabled = false; 
@@ -478,7 +431,7 @@ async function handleSetMaxSlots() {
         if (response.ok) {
             updateStatusMessage(setMaxSlotsStatus, data.message, false);
             newMaxSlotsInput.value = ''; 
-             
+            fetchAdminDashboardData(); // Refresh dashboard data to update display
         } else {
             updateStatusMessage(setMaxSlotsStatus, `Failed to set max slots: ${data.message}`, true);
             setMaxSlotsBtn.disabled = false; 
@@ -516,7 +469,7 @@ async function handleSetMaxAinRewardPool() {
         if (response.ok) {
             updateStatusMessage(setMaxAinRewardPoolStatus, data.message, false);
             maxAinRewardPoolInput.value = ''; 
-            
+            fetchAdminDashboardData(); // Refresh dashboard data to update display
         } else {
             updateStatusMessage(setMaxAinRewardPoolStatus, `Failed to set AIN pool: ${data.message}`, true);
             setMaxAinRewardPoolBtn.disabled = false; 
@@ -547,7 +500,7 @@ async function handleToggleWithdrawalsPause() {
 
         if (response.ok) {
             updateStatusMessage(toggleWithdrawalsStatus, data.message, false);
-             
+            fetchAdminDashboardData(); // Refresh dashboard to update status display
         } else {
             updateStatusMessage(toggleWithdrawalsStatus, `Failed to toggle: ${data.message}`, true);
             toggleWithdrawalsPauseBtn.disabled = false; 
@@ -599,7 +552,7 @@ async function handleFundUser() {
             updateStatusMessage(fundUserStatus, data.message, false);
             fundUserWalletInput.value = '';
             fundAmountInput.value = '';
-            
+            fetchUsersLeaderboard(leaderboardSortBy.value); // Refresh leaderboard after funding
         } else {
             updateStatusMessage(fundUserStatus, `Failed to fund user: ${data.message}`, true);
             fundUserBtn.disabled = false; 
@@ -611,11 +564,57 @@ async function handleFundUser() {
     }
 }
 
+// ADDED Handle resetting a user's staking profile
+async function handleResetUserStake() {
+    if (!selectedAdminAccount) {
+        updateStatusMessage(resetUserStakeStatus, "Admin wallet not connected.", true);
+        return;
+    }
+
+    const targetWalletAddress = targetUserWalletToResetInput.value.trim();
+
+    if (!targetWalletAddress || !/^0x[a-fA-F0-9]{40}$/.test(targetWalletAddress)) {
+        updateStatusMessage(resetUserStakeStatus, "Please enter a valid user wallet address (0x...).", true);
+        return;
+    }
+
+    resetUserStakeBtn.disabled = true;
+    updateStatusMessage(resetUserStakeStatus, `Resetting staking profile for ${targetWalletAddress}...`, false);
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/reset-user-profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminWalletAddress: selectedAdminAccount,
+                targetWalletAddress: targetWalletAddress
+            })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            updateStatusMessage(resetUserStakeStatus, data.message, false);
+            targetUserWalletToResetInput.value = ''; // Clear input on success
+            // Refresh dashboard data to reflect changes, especially participant count and leaderboard
+            fetchAdminDashboardData(); 
+        } else {
+            updateStatusMessage(resetUserStakeStatus, `Failed to reset user: ${data.message}`, true);
+            resetUserStakeBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error("Error resetting user profile:", error);
+        updateStatusMessage(resetUserStakeStatus, `Network error resetting user.`, true);
+        resetUserStakeBtn.disabled = false;
+    }
+}
+
+
 // Feature 4: Fetch and display users leaderboard
 async function fetchUsersLeaderboard(sortBy = 'referralCount') {
     if (!selectedAdminAccount) {
         updateStatusMessage(leaderboardStatus, "Admin wallet not connected.", true);
-        leaderboardTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">Connect wallet to view leaderboard.</td></tr>';
+        // Corrected colspan for empty state when admin wallet is not connected
+        leaderboardTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500">Connect wallet to view leaderboard.</td></tr>';
         totalUsersCountDisplay.textContent = '0';
         return;
     }
@@ -640,28 +639,31 @@ async function fetchUsersLeaderboard(sortBy = 'referralCount') {
                     const createdAtDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A';
                     const row = `
                         <tr>
-                            <td class="admin-table-address">${user.walletAddress.substring(0, 6)}...${user.walletAddress.substring(user.walletAddress.length - 4)}</td>
-                            <td>${user.referralCount || 0}</td>
-                            <td>${(user.BXC_Balance || 0).toFixed(2)}</td>
-                            <td>${(user.AIN_Balance || 0).toFixed(4)}</td>
-                            <td>$${(user.stakedUSDValue || 0).toFixed(2)}</td>
-                            <td>${createdAtDate}</td>
+                            <td class="py-2 px-3 admin-table-address">${user.walletAddress.substring(0, 6)}...${user.walletAddress.substring(user.walletAddress.length - 4)}</td>
+                            <td class="py-2 px-3">${user.referralCount || 0}</td>
+                            <td class="py-2 px-3">${(user.BXC_Balance || 0).toFixed(2)}</td>
+                            <td class="py-2 px-3">${(user.AIN_Balance || 0).toFixed(4)}</td>
+                            <td class="py-2 px-3">$${(user.stakedUSDValue || 0).toFixed(2)}</td>
+                            <td class="py-2 px-3">${createdAtDate}</td>
+                            <td class="py-2 px-3"> {/* NEW COLUMN FOR ACTIONS */}
+                                <button class="select-user-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded" data-wallet="${user.walletAddress}">Select</button>
+                            </td>
                         </tr>
                     `;
                     leaderboardTableBody.innerHTML += row;
                 });
             } else {
-                leaderboardTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">No users found.</td></tr>';
+                leaderboardTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500 py-4">No users found.</td></tr>'; 
             }
         } else {
             updateStatusMessage(leaderboardStatus, `Failed to fetch leaderboard: ${data.message}`, true);
-            leaderboardTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">Error fetching data.</td></tr>';
+            leaderboardTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500">Error fetching data.</td></tr>'; 
             totalUsersCountDisplay.textContent = '0';
         }
     } catch (error) {
         console.error("Error fetching users leaderboard:", error);
         updateStatusMessage(leaderboardStatus, `Network error fetching leaderboard.`, true);
-        leaderboardTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">Network error.</td></tr>';
+        leaderboardTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500">Network error.</td></tr>'; 
         totalUsersCountDisplay.textContent = '0';
     }
 }
@@ -799,8 +801,22 @@ setMaxAinRewardPoolBtn.addEventListener('click', handleSetMaxAinRewardPool);
 fundUserBtn.addEventListener('click', handleFundUser); 
 toggleWithdrawalsPauseBtn.addEventListener('click', handleToggleWithdrawalsPause);
 refreshLeaderboardBtn.addEventListener('click', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
-leaderboardSortBy.addEventListener('change', () => fetchUsersLeaderboard(leaderboardSortBy.value));
-resetUserStakeBtn.addEventListener('click', handleResetUserStake);
+leaderboardSortBy.addEventListener('change', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
+resetUserStakeBtn.addEventListener('click', handleResetUserStake); // ADDED
+
+// Add event listener for selecting a user from the leaderboard table using event delegation
+leaderboardTableBody.addEventListener('click', (event) => {
+    const targetButton = event.target.closest('.select-user-btn');
+    if (targetButton) {
+        const walletAddress = targetButton.dataset.wallet;
+        if (walletAddress) {
+            targetUserWalletToResetInput.value = walletAddress; // Populate the reset input
+            fundUserWalletInput.value = walletAddress;           // Also populate the fund user input for convenience
+            updateStatusMessage(resetUserStakeStatus, `Selected wallet for reset: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`, false);
+            updateStatusMessage(fundUserStatus, `Selected wallet for funding: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`, false);
+        }
+    }
+});
 
 
 // Listen for account/chain changes
