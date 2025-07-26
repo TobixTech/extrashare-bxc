@@ -81,6 +81,12 @@ const leaderboardTableBody = document.getElementById('leaderboardTableBody');
 const leaderboardStatus = document.getElementById('leaderboardStatus');
 const totalUsersCountDisplay = document.getElementById('totalUsersCountDisplay'); 
 
+// Admin Specific UI Elements (continued)
+const targetUserWalletToResetInput = document.getElementById('targetUserWalletToResetInput');
+const resetUserStakeBtn = document.getElementById('resetUserStakeBtn');
+const resetUserStakeStatus = document.getElementById('resetUserStakeStatus');
+
+
 // --- Utility Functions ---
 function updateStatusMessage(element, message, isError = false) {
     element.textContent = message;
@@ -284,6 +290,53 @@ async function handleTogglePause() {
         togglePauseBtn.disabled = false; 
     }
 }
+
+// --- Admin API Interactions (continued) ---
+
+// Handle resetting a user's staking profile
+async function handleResetUserStake() {
+    if (!selectedAdminAccount) {
+        updateStatusMessage(resetUserStakeStatus, "Admin wallet not connected.", true);
+        return;
+    }
+
+    const targetWalletAddress = targetUserWalletToResetInput.value.trim();
+
+    if (!targetWalletAddress || !/^0x[a-fA-F0-9]{40}$/.test(targetWalletAddress)) {
+        updateStatusMessage(resetUserStakeStatus, "Please enter a valid user wallet address (0x...).", true);
+        return;
+    }
+
+    resetUserStakeBtn.disabled = true;
+    updateStatusMessage(resetUserStakeStatus, `Resetting staking profile for ${targetWalletAddress}...`, false);
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/reset-user-profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminWalletAddress: selectedAdminAccount,
+                targetWalletAddress: targetWalletAddress
+            })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            updateStatusMessage(resetUserStakeStatus, data.message, false);
+            targetUserWalletToResetInput.value = ''; // Clear input on success
+            // Refresh dashboard data to reflect changes, especially participant count
+            fetchAdminDashboardData();
+        } else {
+            updateStatusMessage(resetUserStakeStatus, `Failed to reset user: ${data.message}`, true);
+            resetUserStakeBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error("Error resetting user profile:", error);
+        updateStatusMessage(resetUserStakeStatus, `Network error resetting user.`, true);
+        resetUserStakeBtn.disabled = false;
+    }
+}
+
 
 // Handle setting new event duration
 async function handleSetEventDuration() { 
@@ -746,7 +799,8 @@ setMaxAinRewardPoolBtn.addEventListener('click', handleSetMaxAinRewardPool);
 fundUserBtn.addEventListener('click', handleFundUser); 
 toggleWithdrawalsPauseBtn.addEventListener('click', handleToggleWithdrawalsPause);
 refreshLeaderboardBtn.addEventListener('click', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
-leaderboardSortBy.addEventListener('change', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
+leaderboardSortBy.addEventListener('change', () => fetchUsersLeaderboard(leaderboardSortBy.value));
+resetUserStakeBtn.addEventListener('click', handleResetUserStake);
 
 
 // Listen for account/chain changes
