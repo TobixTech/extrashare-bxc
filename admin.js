@@ -65,11 +65,23 @@ const setMaxAinRewardPoolStatus = document.getElementById('setMaxAinRewardPoolSt
 const currentMaxAinRewardPoolDisplay = document.getElementById('currentMaxAinRewardPoolDisplay'); 
 const totalAinRewardedDisplay = document.getElementById('totalAinRewardedDisplay'); 
 
+// Fund User Elements (UPDATED)
+const fundUserOptionSelect = document.getElementById('fundUserOptionSelect');
+const selectedUserFundInputContainer = document.getElementById('selectedUserFundInputContainer');
 const fundUserWalletInput = document.getElementById('fundUserWalletInput'); 
 const fundAmountInput = document.getElementById('fundAmountInput');         
 const fundTokenTypeSelect = document.getElementById('fundTokenTypeSelect'); 
 const fundUserBtn = document.getElementById('fundUserBtn');                 
 const fundUserStatus = document.getElementById('fundUserStatus');           
+const fundUserOptionMessage = document.getElementById('fundUserOptionMessage');
+
+// Reset User Elements (UPDATED)
+const resetUserOptionSelect = document.getElementById('resetUserOptionSelect');
+const selectedUserResetInputContainer = document.getElementById('selectedUserResetInputContainer');
+const targetUserWalletToResetInput = document.getElementById('targetUserWalletToResetInput');
+const resetUserStakeBtn = document.getElementById('resetUserStakeBtn');
+const resetUserStakeStatus = document.getElementById('resetUserStakeStatus');
+const resetUserOptionMessage = document.getElementById('resetUserOptionMessage');
 
 const withdrawalsStatusDisplay = document.getElementById('withdrawalsStatusDisplay');
 const toggleWithdrawalsPauseBtn = document.getElementById('toggleWithdrawalsPauseBtn');
@@ -81,16 +93,10 @@ const leaderboardTableBody = document.getElementById('leaderboardTableBody');
 const leaderboardStatus = document.getElementById('leaderboardStatus');
 const totalUsersCountDisplay = document.getElementById('totalUsersCountDisplay'); 
 
-// ADDED DOM Element References for Reset User Profile
-const targetUserWalletToResetInput = document.getElementById('targetUserWalletToResetInput');
-const resetUserStakeBtn = document.getElementById('resetUserStakeBtn');
-const resetUserStakeStatus = document = document.getElementById('resetUserStakeStatus'); // Fix: remove = document.getElementById('resetUserStakeStatus');
-// FIX: Corrected typo, should be:
-// const resetUserStakeStatus = document.getElementById('resetUserStakeStatus');
 
 // --- Utility Functions ---
 function updateStatusMessage(element, message, isError = false) {
-    console.log(`[Status Update] Element: ${element.id || 'unknown'}, Message: ${message}, IsError: ${isError}`); // Added console log
+    console.log(`[Status Update] Element: ${element.id || 'unknown'}, Message: ${message}, IsError: ${isError}`); 
     element.textContent = message;
     element.classList.remove('hidden', 'text-green-500', 'text-red-500');
     element.classList.add(isError ? 'text-red-500' : 'text-green-500');
@@ -517,23 +523,32 @@ async function handleToggleWithdrawalsPause() {
     }
 }
 
-// Feature 7: Handle funding a user's balance
+// Feature 7: Handle funding a user's balance (UPDATED for dropdown)
 async function handleFundUser() {
     if (!selectedAdminAccount) {
         updateStatusMessage(fundUserStatus, "Admin wallet not connected.", true);
         return;
     }
 
-    const targetWalletAddress = fundUserWalletInput.value.trim();
+    const fundOption = fundUserOptionSelect.value;
     const tokenType = fundTokenTypeSelect.value;
     const amount = parseFloat(fundAmountInput.value);
 
-    if (!targetWalletAddress || !/^0x[a-fA-F0-9]{40}$/.test(targetWalletAddress)) {
-        updateStatusMessage(fundUserStatus, "Please enter a valid target wallet address (0x...).", true);
-        return;
-    }
     if (isNaN(amount) || amount <= 0) {
         updateStatusMessage(fundUserStatus, "Please enter a positive amount to fund.", true);
+        return;
+    }
+    
+    // Check if 'All Users' is selected for funding (not allowed for safety)
+    if (fundOption === 'all') {
+        updateStatusMessage(fundUserStatus, "Mass funding is not supported via this option for safety reasons. Please select 'Selected User'.", true);
+        fundUserBtn.disabled = false; // Re-enable button
+        return;
+    }
+
+    const targetWalletAddress = fundUserWalletInput.value.trim();
+    if (!targetWalletAddress || !/^0x[a-fA-F0-9]{40}$/.test(targetWalletAddress)) {
+        updateStatusMessage(fundUserStatus, "Please enter a valid target wallet address (0x...).", true);
         return;
     }
 
@@ -569,45 +584,61 @@ async function handleFundUser() {
     }
 }
 
-// Handle resetting a user's staking profile
+// Handle resetting a user's staking profile (UPDATED for dropdown)
 async function handleResetUserStake() {
     if (!selectedAdminAccount) {
         updateStatusMessage(resetUserStakeStatus, "Admin wallet not connected.", true);
         return;
     }
 
-    const targetWalletAddress = targetUserWalletToResetInput.value.trim();
-
-    if (!targetWalletAddress || !/^0x[a-fA-F0-9]{40}$/.test(targetWalletAddress)) {
-        updateStatusMessage(resetUserStakeStatus, "Please enter a valid user wallet address (0x...).", true);
-        return;
-    }
+    const resetOption = resetUserOptionSelect.value;
 
     resetUserStakeBtn.disabled = true;
-    updateStatusMessage(resetUserStakeStatus, `Resetting staking profile for ${targetWalletAddress}...`, false);
+    updateStatusMessage(resetUserStakeStatus, `Processing reset request...`, false);
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/admin/reset-user-profile`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        let apiUrl = '';
+        let requestBody = {};
+
+        if (resetOption === 'all') {
+            apiUrl = `${BACKEND_URL}/api/admin/reset-all-user-stakes`;
+            requestBody = { walletAddress: selectedAdminAccount };
+            updateStatusMessage(resetUserStakeStatus, `Resetting ALL users' staking profiles... This may take a moment.`, false);
+        } else { // 'selected' option
+            const targetWalletAddress = targetUserWalletToResetInput.value.trim();
+            if (!targetWalletAddress || !/^0x[a-fA-F0-9]{40}$/.test(targetWalletAddress)) {
+                updateStatusMessage(resetUserStakeStatus, "Please enter a valid user wallet address (0x...) or select 'All Users'.", true);
+                resetUserStakeBtn.disabled = false;
+                return;
+            }
+            apiUrl = `${BACKEND_URL}/api/admin/reset-user-profile`;
+            requestBody = {
                 adminWalletAddress: selectedAdminAccount,
                 targetWalletAddress: targetWalletAddress
-            })
+            };
+            updateStatusMessage(resetUserStakeStatus, `Resetting staking profile for ${targetWalletAddress}...`, false);
+        }
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
         });
         const data = await response.json();
 
         if (response.ok) {
             updateStatusMessage(resetUserStakeStatus, data.message, false);
-            targetUserWalletToResetInput.value = ''; // Clear input on success
+            if (resetOption === 'selected') {
+                targetUserWalletToResetInput.value = ''; // Clear input on success for selected user
+            }
             fetchAdminDashboardData(); // Refresh dashboard data to reflect changes
         } else {
-            updateStatusMessage(resetUserStakeStatus, `Failed to reset user: ${data.message}`, true);
+            updateStatusMessage(resetUserStakeStatus, `Failed to reset: ${data.message}`, true);
             resetUserStakeBtn.disabled = false;
         }
     } catch (error) {
-        console.error("Error resetting user profile:", error);
-        updateStatusMessage(resetUserStakeStatus, `Network error resetting user.`, true);
+        console.error("Error during reset operation:", error);
+        updateStatusMessage(resetUserStakeStatus, `Network error during reset.`, true);
         resetUserStakeBtn.disabled = false;
     }
 }
@@ -801,12 +832,52 @@ setEventDurationBtn.addEventListener('click', handleSetEventDuration);
 setMaxSlotsBtn.addEventListener('click', handleSetMaxSlots); 
 setStakingWalletBtn.addEventListener('click', handleSetStakingWalletAddress); 
 setStakeAmountBtn.addEventListener('click', handleSetStakeAmount); 
-setMaxAinRewardPoolBtn.addEventListener('click', handleSetMaxAinRewardPool); // Corrected function name here
+setMaxAinRewardPoolBtn.addEventListener('click', handleSetMaxAinRewardPool); 
 fundUserBtn.addEventListener('click', handleFundUser); 
 toggleWithdrawalsPauseBtn.addEventListener('click', handleToggleWithdrawalsPause);
 refreshLeaderboardBtn.addEventListener('click', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
 leaderboardSortBy.addEventListener('change', () => fetchUsersLeaderboard(leaderboardSortBy.value)); 
 resetUserStakeBtn.addEventListener('click', handleResetUserStake); 
+
+// Listener for Reset User Option Select (ADDED)
+resetUserOptionSelect.addEventListener('change', () => {
+    const selectedOption = resetUserOptionSelect.value;
+    if (selectedOption === 'all') {
+        selectedUserResetInputContainer.classList.add('hidden');
+        resetUserOptionMessage.textContent = "Staking profiles for ALL users will be reset.";
+        resetUserOptionMessage.classList.remove('hidden');
+        targetUserWalletToResetInput.value = ''; // Clear input when "All Users" is selected
+        resetUserStakeBtn.textContent = "Reset ALL Users' Stakes (Caution!)";
+        resetUserStakeStatus.classList.add('hidden'); // Clear status message
+    } else { // selected
+        selectedUserResetInputContainer.classList.remove('hidden');
+        resetUserOptionMessage.classList.add('hidden');
+        resetUserStakeBtn.textContent = "Reset Selected User";
+        resetUserStakeStatus.classList.add('hidden'); // Clear status message
+    }
+});
+
+// Listener for Fund User Option Select (ADDED)
+fundUserOptionSelect.addEventListener('change', () => {
+    const selectedOption = fundUserOptionSelect.value;
+    if (selectedOption === 'all') {
+        selectedUserFundInputContainer.classList.add('hidden');
+        fundUserOptionMessage.textContent = "Warning: Mass funding is generally NOT recommended. Only 'Selected User' is supported for funding.";
+        fundUserOptionMessage.classList.remove('hidden');
+        fundUserWalletInput.value = ''; // Clear input
+        fundAmountInput.value = ''; // Clear amount
+        fundUserBtn.textContent = "Fund (Select Specific User)";
+        fundUserBtn.disabled = true; // Disable button for mass funding
+        fundUserStatus.classList.add('hidden'); // Clear status message
+    } else { // selected
+        selectedUserFundInputContainer.classList.remove('hidden');
+        fundUserOptionMessage.classList.add('hidden');
+        fundUserBtn.textContent = "Fund Selected User";
+        fundUserBtn.disabled = false; // Re-enable button
+        fundUserStatus.classList.add('hidden'); // Clear status message
+    }
+});
+
 
 // Add event listener for selecting a user from the leaderboard table using event delegation
 leaderboardTableBody.addEventListener('click', (event) => {
@@ -814,9 +885,19 @@ leaderboardTableBody.addEventListener('click', (event) => {
     if (targetButton) {
         const walletAddress = targetButton.dataset.wallet;
         if (walletAddress) {
+            // Check current selection option and set input/dropdown
+            if (resetUserOptionSelect.value !== 'selected') {
+                resetUserOptionSelect.value = 'selected';
+                resetUserOptionSelect.dispatchEvent(new Event('change')); // Trigger change to show input
+            }
             targetUserWalletToResetInput.value = walletAddress; // Populate the reset input
-            fundUserWalletInput.value = walletAddress;           // Also populate the fund user input for convenience
             updateStatusMessage(resetUserStakeStatus, `Selected wallet for reset: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`, false);
+            
+            if (fundUserOptionSelect.value !== 'selected') {
+                fundUserOptionSelect.value = 'selected';
+                fundUserOptionSelect.dispatchEvent(new Event('change')); // Trigger change to show input
+            }
+            fundUserWalletInput.value = walletAddress;           // Also populate the fund user input for convenience
             updateStatusMessage(fundUserStatus, `Selected wallet for funding: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`, false);
         }
     }
@@ -869,13 +950,15 @@ if (window.ethereum) {
 
 // Initial Load / Auto-connect logic (Revised for robustness)
 document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize dropdowns to their default "selected" state
+    resetUserOptionSelect.dispatchEvent(new Event('change'));
+    fundUserOptionSelect.dispatchEvent(new Event('change'));
+
     // Check if a Web3 provider (like MetaMask) is available
     if (window.ethereum) {
         try {
-            // Attempt to initialize Web3 with the default provider
             await initializeWeb3(window.ethereum);
 
-            // Request accounts if not already connected, or get current if already connected
             // Using eth_accounts for passive check, requestAccounts for active prompt
             const accounts = await web3.eth.getAccounts(); 
             if (accounts.length > 0) {
@@ -883,18 +966,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log("Auto-connected account:", selectedAdminAccount);
                 connectWalletBtn.textContent = `Connected: ${selectedAdminAccount.substring(0, 6)}...${selectedAdminAccount.substring(selectedAdminAccount.length - 4)}`;
                 
-                // Proceed with admin status check and dashboard data fetch
                 if (await checkAdminStatus(selectedAdminAccount)) {
                     fetchAdminDashboardData();
                 } else {
-                    // Not an admin, display appropriate message
                     connectWalletBtn.textContent = 'Connect Admin Wallet'; 
                     adminMessage.textContent = "Access Denied: Your connected wallet is not an authorized administrator.";
                     adminControls.classList.add('hidden');
                 }
             } else {
                 console.log("No account pre-connected, ready for manual connection.");
-                // Wallet is installed but no account is connected/selected
                 connectWalletBtn.textContent = 'Connect Admin Wallet'; 
                 adminMessage.textContent = "Please connect your wallet to verify admin access.";
                 adminControls.classList.add('hidden');
@@ -907,11 +987,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             connectWalletBtn.textContent = 'Connect Admin Wallet'; 
         }
     } else {
-        // No Web3 provider (MetaMask etc.) detected
         console.warn("No Ethereum provider (like MetaMask) detected.");
         adminMessage.textContent = "No Web3 wallet detected. Please install MetaMask or a compatible browser extension.";
         adminMessage.classList.remove('hidden');
         adminMessage.classList.add('text-red-500');
-        connectWalletBtn.disabled = true; // Disable connect button if no provider
+        connectWalletBtn.disabled = true; 
     }
 });
