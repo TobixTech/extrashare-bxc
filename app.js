@@ -18,7 +18,7 @@ let eventEndTime = null; // Will store the timestamp when the event ends
 let bxcAccrualInterval = null; // To hold the interval for BXC accrual
 let mainEventTimerInterval = null; // Global for the main dApp timer
 
-// Backend URL (Crucial: ENSURE THIS EXACTLY MATCHES YOUR DEPLOYED BACKEND URL)
+// Backend URL (Crucial: ENSURE THIS EXACTLY MATCHS YOUR DEPLOYED BACKEND URL)
 const BACKEND_URL = 'https://bxc-backend-1dkpqw.fly.dev'; // Your actual deployed backend URL
 
 // --- DOM Element References ---
@@ -810,9 +810,6 @@ if (window.ethereum) {
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
     // --- Pop-up Initialization (ADDED - Place at the VERY BEGINNING of this block) ---
-    // You can set the image source here if it's dynamic, otherwise set it directly in index.html
-    // welcomeBannerImg.src = "YOUR_IMAGE_LINK_HERE"; // Uncomment and replace if setting dynamically
-    
     // Add event listener for the close button on the popup
     closePopupBtn.addEventListener('click', hideWelcomePopup);
 
@@ -840,7 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateStatusMessage(stakeStatus, "Auto-connect failed. Please connect wallet manually.", true);
             // Reset connect button on auto-connect failure
             connectWalletBtn.textContent = 'Connect Wallet';
-            connectWalletBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            connectWalletBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
             connectWalletBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
         });
     } else {
