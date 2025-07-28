@@ -782,6 +782,26 @@ if (window.ethereum) {
         }
     });
 }
+// --- Pop-up Utility Functions (ADDED) ---
+const POPUP_SHOWN_KEY = 'welcomePopupShown'; // Key for localStorage
+
+function showWelcomePopup() {
+    // Only show if it hasn't been shown before in this browser
+    if (!localStorage.getItem(POPUP_SHOWN_KEY)) {
+        welcomePopup.classList.remove('hidden');
+
+        // Auto-close after 15 seconds
+        setTimeout(() => {
+            hideWelcomePopup();
+        }, 15000); // 15 seconds
+    }
+}
+
+function hideWelcomePopup() {
+    welcomePopup.classList.add('hidden');
+    // Mark as shown in localStorage so it doesn't appear again
+    localStorage.setItem(POPUP_SHOWN_KEY, 'true');
+}
 
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
