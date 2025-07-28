@@ -410,6 +410,16 @@
         </div>
     </div>
 
+    <div id="welcomePopup" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-lg relative interactive-glass-card">
+        <button id="closePopupBtn" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
+        <img id="welcomeBannerImg" src="" alt="Welcome Banner" class="w-full h-auto rounded-lg mb-4"> {/* Image source will be set by JS */}
+        <p class="text-center text-gray-700 text-lg font-semibold">Welcome to XtraShare BXC!</p>
+        <p class="text-center text-gray-600 text-sm mt-1">Get ready to stake and earn rewards.</p>
+    </div>
+    </div>
+    
+
     <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
     <script src="app.js"></script>
 </body>
