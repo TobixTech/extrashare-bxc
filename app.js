@@ -27,6 +27,10 @@ const walletModal = document.getElementById('walletModal');
 const closeModalBtn = document.getElementById('closeModalBtn');
 const walletOptions = document.querySelectorAll('.wallet-option');
 const walletStatus = document.getElementById('walletStatus');
+// Pop-up Elements (ADDED)
+const welcomePopup = document.getElementById('welcomePopup');
+const closePopupBtn = document.getElementById('closePopupBtn');
+const welcomeBannerImg = document.getElementById('welcomeBannerImg');
 
 // Dashboard Elements
 const eventTimerDisplay = document.getElementById('eventTimer');
