@@ -239,9 +239,13 @@
             00:00:00:00
         </p>
     </div>
-    <div id="inlineNotification" class="w-full max-w-7xl mx-auto mt-4 px-4 py-3 bg-cyan-100 border border-cyan-400 text-cyan-800 rounded-lg flex items-center justify-center relative overflow-hidden">
+    <div id="inlineNotification" class="w-full max-w-7xl mx-auto mt-4 px-4 py-3 bg-cyan-100 border border-cyan-400 text-black rounded-lg flex items-center justify-center relative overflow-hidden">
         <span class="font-bold mr-2">NOTE:</span>
-        <span id="notificationText" class="flex-grow text-center text-cyan-700 font-semibold opacity-0 transition-opacity duration-500"></span>
+        <marquee id="notificationText" class="flex-grow text-center font-semibold" behavior="scroll" direction="left" scrollamount="6">
+            . Events start August 9th 12PM &nbsp; &nbsp; &nbsp;
+            . First 150 stake get Reward &nbsp; &nbsp; &nbsp;
+            . Random 9,000 get AIN rewards
+        </marquee>
     </div>
     <main class="flex-grow p-4 md:p-8">
         <div class="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -402,7 +406,7 @@
             <p id="walletStatus" class="mt-6 text-center text-sm text-red-500 hidden"></p>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
-    <script src="apps.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script> <script src="app.js">
+    </script>
 </body>
 </html>
