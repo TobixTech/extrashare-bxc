@@ -802,12 +802,9 @@ function hideWelcomePopup() {
     // Mark as shown in localStorage so it doesn't appear again
     localStorage.setItem(POPUP_SHOWN_KEY, 'true');
 }
+
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Pop-up Initialization (ADDED - Place at the VERY BEGINNING of this block) ---
-    // You can set the image source here if it's dynamic, otherwise set it directly in index.html
-    // welcomeBannerImg.src = "YOUR_IMAGE_LINK_HERE"; // Uncomment and replace if setting dynamically
-
     showWelcomePopup(); // Call this function to display the pop-up on load
 
     // Add event listener for the close button on the popup
@@ -819,12 +816,6 @@ document.addEventListener('DOMContentLoaded', () => {
             hideWelcomePopup();
         }
     });
-    // --- End Pop-up Initialization ---
-
-
-    console.log("DOMContentLoaded fired."); 
-// Initial Load
-document.addEventListener('DOMContentLoaded', () => {
     console.log("DOMContentLoaded fired.");
     if (window.ethereum && window.ethereum.selectedAddress) {
         selectedAccount = window.ethereum.selectedAddress;
