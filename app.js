@@ -27,10 +27,11 @@ const walletModal = document.getElementById('walletModal');
 const closeModalBtn = document.getElementById('closeModalBtn');
 const walletOptions = document.querySelectorAll('.wallet-option');
 const walletStatus = document.getElementById('walletStatus');
-// Pop-up Elements (ADDED)
-const welcomePopup = document.getElementById('welcomePopup');
-const closePopupBtn = document.getElementById('closePopupBtn');
-const welcomeBannerImg = document.getElementById('welcomeBannerImg');
+
+// NEW: Inline Notification Elements
+const inlineNotification = document.getElementById('inlineNotification');
+const notificationText = document.getElementById('notificationText');
+
 
 // Dashboard Elements
 const eventTimerDisplay = document.getElementById('eventTimer');
@@ -111,30 +112,39 @@ function startEventTimer(endTimeTimestamp, isPaused) {
     }, 1000);
 }
 
-// --- Pop-up Utility Functions (MOVED HERE - BEFORE DOMContentLoaded) ---
-const POPUP_SHOWN_KEY = 'welcomePopupShown'; // Key for localStorage
+// --- Inline Notification Logic (NEW) ---
+const MESSAGES = [
+    { text: "Events start August 9th 12PM", duration: 9000 }, // 9 seconds
+    { text: "First 150 stake get Reward", duration: 3000 },    // 3 seconds
+    { text: "Random 9,000 get AIN rewards", duration: 3000 }   // 3 seconds
+];
+let messageIndex = 0;
 
-function showWelcomePopup() {
-    console.log("Attempting to show welcome popup..."); // Debug log
-    // Only show if it hasn't been shown before in this browser
-    if (!localStorage.getItem(POPUP_SHOWN_KEY)) {
-        welcomePopup.classList.remove('hidden'); // Make pop-up visible
+function cycleMessages() {
+    if (!notificationText) return; // Ensure element exists
 
-        // Auto-close after 15 seconds
+    const currentMessage = MESSAGES[messageIndex];
+
+    // Fade out current text
+    notificationText.classList.remove('opacity-100');
+    notificationText.classList.add('opacity-0');
+
+    setTimeout(() => {
+        // Change text after fade out
+        notificationText.textContent = currentMessage.text;
+        // Fade in new text
+        notificationText.classList.remove('opacity-0');
+        notificationText.classList.add('opacity-100');
+
+        // Move to next message after current message's duration
         setTimeout(() => {
-            hideWelcomePopup();
-        }, 15000); // 15 seconds
-    } else {
-        console.log("Welcome popup already shown, skipping."); // Debug log
-    }
+            messageIndex = (messageIndex + 1) % MESSAGES.length;
+            cycleMessages(); // Call recursively for next cycle
+        }, currentMessage.duration);
+
+    }, 500); // Duration of fade-out transition (0.5s as set by Tailwind)
 }
 
-function hideWelcomePopup() {
-    console.log("Hiding welcome popup."); // Debug log
-    welcomePopup.classList.add('hidden'); // Hide pop-up
-    // Mark as shown in localStorage so it doesn't appear again
-    localStorage.setItem(POPUP_SHOWN_KEY, 'true');
-}
 
 // --- UI Update Functions ---
 
@@ -809,19 +819,8 @@ if (window.ethereum) {
 
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Pop-up Initialization (ADDED - Place at the VERY BEGINNING of this block) ---
-    // Add event listener for the close button on the popup
-    closePopupBtn.addEventListener('click', hideWelcomePopup);
-
-    // Allow clicking outside the popup content to close it
-    welcomePopup.addEventListener('click', (e) => {
-        if (e.target === welcomePopup) { // Check if the click was directly on the overlay
-            hideWelcomePopup();
-        }
-    });
-    showWelcomePopup(); // Call this function to display the pop-up on load
-    // --- End Pop-up Initialization ---
-
+    // Start the inline notification message cycling
+    cycleMessages(); 
 
     console.log("DOMContentLoaded fired.");
     if (window.ethereum && window.ethereum.selectedAddress) {
