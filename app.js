@@ -112,7 +112,7 @@ function startEventTimer(endTimeTimestamp, isPaused) {
     }, 1000);
 }
 
-// --- Inline Notification Logic (NEW) ---
+// --- Inline Notification Logic (NEW & IMPROVED) ---
 const MESSAGES = [
     { text: "Events start August 9th 12PM", duration: 9000 }, // 9 seconds
     { text: "First 150 stake get Reward", duration: 3000 },    // 3 seconds
@@ -121,10 +121,6 @@ const MESSAGES = [
 let messageIndex = 0;
 
 function cycleMessages() {
-    // TEMPORARY DEBUG ALERT: REMOVE THIS LINE LATER, once messages are showing!
-    alert("cycleMessages function is called!"); 
-    // END TEMPORARY DEBUG ALERT
-
     if (!notificationText) {
         console.error("Notification text element not found!"); 
         return;
@@ -133,17 +129,18 @@ function cycleMessages() {
     const currentMessage = MESSAGES[messageIndex];
     console.log(`[DEBUG] Cycling message to: "${currentMessage.text}"`); 
 
-    // Fade out current text (if any)
+    // Fade out current text
     notificationText.classList.remove('opacity-100');
     notificationText.classList.add('opacity-0');
 
-    // Wait for fade-out transition to complete before changing text and fading in
+    // Wait for fade-out transition to complete (500ms as per CSS)
     setTimeout(() => {
         notificationText.textContent = currentMessage.text; // Set new text
-        notificationText.classList.remove('opacity-0'); // Ensure it starts from opacity 0 if needed
-        notificationText.classList.add('opacity-100');   // Fade in new text
+        // Fade in new text
+        notificationText.classList.remove('opacity-0');
+        notificationText.classList.add('opacity-100');
 
-        // Set timeout for the duration of the current message display
+        // Set timeout for the duration the current message should be displayed
         setTimeout(() => {
             messageIndex = (messageIndex + 1) % MESSAGES.length; // Move to next message
             cycleMessages(); // Call recursively for next cycle
@@ -288,7 +285,8 @@ async function handleStake() {
             return;
         }
 
-        const currentInitialStakeAmount = statusData.global.initialStakeAmountUSD || 8;
+        // Removed the default value for initialStakeAmountUSD as requested
+        const currentInitialStakeAmount = statusData.global.initialStakeAmountUSD; 
         const stakeRecipientAddress = statusData.global.stakingRecipientAddress || '0xYourDefaultStakeRecipientAddressHere'; 
 
         if (stakeRecipientAddress === '0xYourDefaultStakeRecipientAddressHere' || !/^0x[a-fA-F0-9]{40}$/.test(stakeRecipientAddress)) {
@@ -629,7 +627,7 @@ const connectWallet = async (walletName, provider) => {
         // Update the main connect button text to show connected address and green background
         connectWalletBtn.textContent = `Connected: ${selectedAccount.substring(0, 6)}...${selectedAccount.substring(selectedAccount.length - 4)}`;
         connectWalletBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-        connectWalletBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+            connectWalletBtn.classList.add('bg-green-600', 'hover:bg-green-700');
 
         updateStatusMessage(walletStatus, `Connected: ${selectedAccount.substring(0, 6)}...${selectedAccount.substring(selectedAccount.length - 4)}`, false);
 
@@ -826,10 +824,10 @@ if (window.ethereum) {
 
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
-    // Start the inline notification message cycling
+    // Start the inline notification message cycling immediately
+    console.log("DOMContentLoaded fired. Starting message cycle.");
     cycleMessages(); 
 
-    console.log("DOMContentLoaded fired.");
     if (window.ethereum && window.ethereum.selectedAddress) {
         selectedAccount = window.ethereum.selectedAddress;
         initializeWeb3(window.ethereum).then(() => {
@@ -843,7 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateStatusMessage(stakeStatus, "Auto-connect failed. Please connect wallet manually.", true);
             // Reset connect button on auto-connect failure
             connectWalletBtn.textContent = 'Connect Wallet';
-            connectWalletBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            connectWalletBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
             connectWalletBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
         });
     } else {
