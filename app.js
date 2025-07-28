@@ -28,9 +28,9 @@ const closeModalBtn = document.getElementById('closeModalBtn');
 const walletOptions = document.querySelectorAll('.wallet-option');
 const walletStatus = document.getElementById('walletStatus');
 
-// NEW: Inline Notification Elements
-const inlineNotification = document.getElementById('inlineNotification');
-const notificationText = document.getElementById('notificationText');
+// Removed: Inline Notification Elements as they are now handled by HTML marquee
+// const inlineNotification = document.getElementById('inlineNotification');
+// const notificationText = document.getElementById('notificationText');
 
 
 // Dashboard Elements
@@ -112,42 +112,10 @@ function startEventTimer(endTimeTimestamp, isPaused) {
     }, 1000);
 }
 
-// --- Inline Notification Logic (NEW & IMPROVED) ---
-const MESSAGES = [
-    { text: "Events start August 9th 12PM", duration: 9000 }, // 9 seconds
-    { text: "First 150 stake get Reward", duration: 3000 },    // 3 seconds
-    { text: "Random 9,000 get AIN rewards", duration: 3000 }   // 3 seconds
-];
-let messageIndex = 0;
-
-function cycleMessages() {
-    if (!notificationText) {
-        console.error("Notification text element not found!"); 
-        return;
-    }
-
-    const currentMessage = MESSAGES[messageIndex];
-    console.log(`[DEBUG] Cycling message to: "${currentMessage.text}"`); 
-
-    // Fade out current text
-    notificationText.classList.remove('opacity-100');
-    notificationText.classList.add('opacity-0');
-
-    // Wait for fade-out transition to complete (500ms as per CSS)
-    setTimeout(() => {
-        notificationText.textContent = currentMessage.text; // Set new text
-        // Fade in new text
-        notificationText.classList.remove('opacity-0');
-        notificationText.classList.add('opacity-100');
-
-        // Set timeout for the duration the current message should be displayed
-        setTimeout(() => {
-            messageIndex = (messageIndex + 1) % MESSAGES.length; // Move to next message
-            cycleMessages(); // Call recursively for next cycle
-        }, currentMessage.duration);
-
-    }, 500); // This 500ms should match the 'duration-500' transition in CSS for fade-out
-}
+// Removed: Inline Notification Logic (now handled by HTML marquee)
+// const MESSAGES = [...];
+// let messageIndex = 0;
+// function cycleMessages() {...}
 
 
 // --- UI Update Functions ---
@@ -285,7 +253,6 @@ async function handleStake() {
             return;
         }
 
-        // Removed the default value for initialStakeAmountUSD as requested
         const currentInitialStakeAmount = statusData.global.initialStakeAmountUSD; 
         const stakeRecipientAddress = statusData.global.stakingRecipientAddress || '0xYourDefaultStakeRecipientAddressHere'; 
 
@@ -500,7 +467,8 @@ async function handleCollectReward() {
             updateStatusMessage(partneredCoinStatus, `Failed to collect AIN: ${data.message}`, true);
             collectRewardBtn.disabled = false;
         }
-    } catch (error) {
+    }
+    catch (error) {
         console.error("Error collecting AIN:", error);
         updateStatusMessage(partneredCoinStatus, `Network error collecting AIN.`, true);
         collectRewardBtn.disabled = false;
@@ -627,7 +595,7 @@ const connectWallet = async (walletName, provider) => {
         // Update the main connect button text to show connected address and green background
         connectWalletBtn.textContent = `Connected: ${selectedAccount.substring(0, 6)}...${selectedAccount.substring(selectedAccount.length - 4)}`;
         connectWalletBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            connectWalletBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        connectWalletBtn.classList.add('bg-green-600', 'hover:bg-green-700');
 
         updateStatusMessage(walletStatus, `Connected: ${selectedAccount.substring(0, 6)}...${selectedAccount.substring(selectedAccount.length - 4)}`, false);
 
@@ -824,9 +792,9 @@ if (window.ethereum) {
 
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
-    // Start the inline notification message cycling immediately
-    console.log("DOMContentLoaded fired. Starting message cycle.");
-    cycleMessages(); 
+    // Removed the JavaScript-based message cycling as it's now handled by HTML marquee
+    // console.log("DOMContentLoaded fired. Starting message cycle.");
+    // cycleMessages(); 
 
     if (window.ethereum && window.ethereum.selectedAddress) {
         selectedAccount = window.ethereum.selectedAddress;
@@ -841,7 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateStatusMessage(stakeStatus, "Auto-connect failed. Please connect wallet manually.", true);
             // Reset connect button on auto-connect failure
             connectWalletBtn.textContent = 'Connect Wallet';
-            connectWalletBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            connectWalletBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
             connectWalletBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
         });
     } else {
