@@ -111,6 +111,30 @@ function startEventTimer(endTimeTimestamp, isPaused) {
     }, 1000);
 }
 
+// --- Pop-up Utility Functions (MOVED HERE - BEFORE DOMContentLoaded) ---
+const POPUP_SHOWN_KEY = 'welcomePopupShown'; // Key for localStorage
+
+function showWelcomePopup() {
+    console.log("Attempting to show welcome popup..."); // Debug log
+    // Only show if it hasn't been shown before in this browser
+    if (!localStorage.getItem(POPUP_SHOWN_KEY)) {
+        welcomePopup.classList.remove('hidden'); // Make pop-up visible
+
+        // Auto-close after 15 seconds
+        setTimeout(() => {
+            hideWelcomePopup();
+        }, 15000); // 15 seconds
+    } else {
+        console.log("Welcome popup already shown, skipping."); // Debug log
+    }
+}
+
+function hideWelcomePopup() {
+    console.log("Hiding welcome popup."); // Debug log
+    welcomePopup.classList.add('hidden'); // Hide pop-up
+    // Mark as shown in localStorage so it doesn't appear again
+    localStorage.setItem(POPUP_SHOWN_KEY, 'true');
+}
 
 // --- UI Update Functions ---
 
@@ -223,15 +247,15 @@ async function fetchStatus(walletAddress = null) {
 }
 
 async function handleStake() {
-    console.log("Stake button clicked - handleStake function entered."); // ADDED THIS LOG
+    console.log("Stake button clicked - handleStake function entered."); 
 
     if (!selectedAccount) {
         updateStatusMessage(stakeStatus, "Please connect your wallet first.", true);
-        console.log("selectedAccount is null. Exiting handleStake."); // ADDED THIS LOG
+        console.log("selectedAccount is null. Exiting handleStake."); 
         return;
     }
     updateStatusMessage(stakeStatus, "Initiating stake transaction...", false);
-    console.log("selectedAccount is NOT null. Proceeding to fetch status."); // ADDED THIS LOG
+    console.log("selectedAccount is NOT null. Proceeding to fetch status."); 
 
     try {
         const statusResponse = await fetch(`${BACKEND_URL}/api/status`, {
@@ -243,7 +267,7 @@ async function handleStake() {
 
         if (!statusResponse.ok || !statusData.global) {
             updateStatusMessage(stakeStatus, `Failed to get current staking details: ${statusData.message || 'Error'}`, true);
-            console.log("Failed to get current staking details. Exiting handleStake."); // ADDED THIS LOG
+            console.log("Failed to get current staking details. Exiting handleStake."); 
             return;
         }
 
@@ -252,7 +276,7 @@ async function handleStake() {
 
         if (stakeRecipientAddress === '0xYourDefaultStakeRecipientAddressHere' || !/^0x[a-fA-F0-9]{40}$/.test(stakeRecipientAddress)) {
              updateStatusMessage(stakeStatus, "Staking recipient address is not properly configured by admin.", true);
-             console.log("Staking recipient address invalid. Exiting handleStake."); // ADDED THIS LOG
+             console.log("Staking recipient address invalid. Exiting handleStake."); 
              return;
         }
 
@@ -782,31 +806,13 @@ if (window.ethereum) {
         }
     });
 }
-// --- Pop-up Utility Functions (ADDED) ---
-const POPUP_SHOWN_KEY = 'welcomePopupShown'; // Key for localStorage
-
-function showWelcomePopup() {
-    // Only show if it hasn't been shown before in this browser
-    if (!localStorage.getItem(POPUP_SHOWN_KEY)) {
-        welcomePopup.classList.remove('hidden');
-
-        // Auto-close after 15 seconds
-        setTimeout(() => {
-            hideWelcomePopup();
-        }, 15000); // 15 seconds
-    }
-}
-
-function hideWelcomePopup() {
-    welcomePopup.classList.add('hidden');
-    // Mark as shown in localStorage so it doesn't appear again
-    localStorage.setItem(POPUP_SHOWN_KEY, 'true');
-}
 
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
-    showWelcomePopup(); // Call this function to display the pop-up on load
-
+    // --- Pop-up Initialization (ADDED - Place at the VERY BEGINNING of this block) ---
+    // You can set the image source here if it's dynamic, otherwise set it directly in index.html
+    // welcomeBannerImg.src = "YOUR_IMAGE_LINK_HERE"; // Uncomment and replace if setting dynamically
+    
     // Add event listener for the close button on the popup
     closePopupBtn.addEventListener('click', hideWelcomePopup);
 
@@ -816,6 +822,10 @@ document.addEventListener('DOMContentLoaded', () => {
             hideWelcomePopup();
         }
     });
+    showWelcomePopup(); // Call this function to display the pop-up on load
+    // --- End Pop-up Initialization ---
+
+
     console.log("DOMContentLoaded fired.");
     if (window.ethereum && window.ethereum.selectedAddress) {
         selectedAccount = window.ethereum.selectedAddress;
