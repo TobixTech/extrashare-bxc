@@ -121,28 +121,35 @@ const MESSAGES = [
 let messageIndex = 0;
 
 function cycleMessages() {
-    if (!notificationText) return; // Ensure element exists
+    // TEMPORARY DEBUG ALERT: REMOVE THIS LINE LATER, once messages are showing!
+    alert("cycleMessages function is called!"); 
+    // END TEMPORARY DEBUG ALERT
+
+    if (!notificationText) {
+        console.error("Notification text element not found!"); 
+        return;
+    }
 
     const currentMessage = MESSAGES[messageIndex];
+    console.log(`[DEBUG] Cycling message to: "${currentMessage.text}"`); 
 
-    // Fade out current text
+    // Fade out current text (if any)
     notificationText.classList.remove('opacity-100');
     notificationText.classList.add('opacity-0');
 
+    // Wait for fade-out transition to complete before changing text and fading in
     setTimeout(() => {
-        // Change text after fade out
-        notificationText.textContent = currentMessage.text;
-        // Fade in new text
-        notificationText.classList.remove('opacity-0');
-        notificationText.classList.add('opacity-100');
+        notificationText.textContent = currentMessage.text; // Set new text
+        notificationText.classList.remove('opacity-0'); // Ensure it starts from opacity 0 if needed
+        notificationText.classList.add('opacity-100');   // Fade in new text
 
-        // Move to next message after current message's duration
+        // Set timeout for the duration of the current message display
         setTimeout(() => {
-            messageIndex = (messageIndex + 1) % MESSAGES.length;
+            messageIndex = (messageIndex + 1) % MESSAGES.length; // Move to next message
             cycleMessages(); // Call recursively for next cycle
         }, currentMessage.duration);
 
-    }, 500); // Duration of fade-out transition (0.5s as set by Tailwind)
+    }, 500); // This 500ms should match the 'duration-500' transition in CSS for fade-out
 }
 
 
